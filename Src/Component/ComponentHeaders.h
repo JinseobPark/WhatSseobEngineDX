@@ -1,0 +1,12 @@
+#pragma once
+#include "ComponentType.h"
+#include "Sprite/Model/Model.h"
+#include "Sprite/Model/ModelInstance.h"
+#include "Sprite/Model/ModelBillboard.h"
+#include "Sprite/Model/ModelTessellation.h"
+#include "Component.h"
+#include "Transform.h"
+#include "Lights/DirLight.h"
+#include "Lights/PointLight.h"
+#include "Lights/SpotLight.h"
+#include "Camera/Camera.h"
