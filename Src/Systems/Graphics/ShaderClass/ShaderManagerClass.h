@@ -57,7 +57,7 @@ public:
 
 	bool RenderTessellationShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, float);
 
-	bool RenderDeferredMultiLightShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,  ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
+	bool RenderDeferredMultiLightShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,  ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
 
 	void InitializeLightBuffer(vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
 

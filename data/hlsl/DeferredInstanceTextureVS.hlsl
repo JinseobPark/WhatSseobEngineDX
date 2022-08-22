@@ -30,7 +30,8 @@ struct PixelInputType
     float4 position : SV_POSITION;
     float2 tex : TEXCOORD0;
     float3 normal : NORMAL;
-    float4 worldpos : TEXCOORD1;
+    float4 worldpos : TEXTURE1;
+    float4 depthPosition : TEXTURE2;
 };
 
 
@@ -63,6 +64,7 @@ PixelInputType TextureVertexShader(VertexInputType input)
 	
 	// 법선 벡터를 정규화합니다.
     output.normal = normalize(output.normal);
+    output.depthPosition = output.position;
     
     return output;
 }

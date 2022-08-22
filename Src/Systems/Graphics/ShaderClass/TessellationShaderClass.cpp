@@ -19,14 +19,14 @@ TessellationShaderClass::~TessellationShaderClass()
 
 bool TessellationShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
-	// 정점 및 픽셀 쉐이더를 초기화합니다.
+	// Initialize vertex and pixel shader
 	return InitializeShader(device, hwnd, L"data/hlsl/color_vs.hlsl", L"data/hlsl/color_hs.hlsl", L"data/hlsl/color_ds.hlsl", L"data/hlsl/color_ps.hlsl");
 }
 
 
 void TessellationShaderClass::Shutdown()
 {
-	// 버텍스 및 픽셀 쉐이더와 관련된 객체를 종료합니다.
+	// Shutdown vertex and pixel shaders
 	ShutdownShader();
 }
 
@@ -34,13 +34,13 @@ void TessellationShaderClass::Shutdown()
 bool TessellationShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 	XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, float tessellationAmount)
 {
-	// 렌더링에 사용할 셰이더 매개 변수를 설정합니다.
+	// Set shader parameters
 	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, tessellationAmount))
 	{
 		return false;
 	}
 
-	// 설정된 버퍼를 셰이더로 렌더링한다.
+	// Render the prepared buffers
 	RenderShader(deviceContext, indexCount);
 
 	return true;
@@ -51,16 +51,16 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 {
 	ID3D10Blob* errorMessage = nullptr;
 
-	// 버텍스 쉐이더 코드를 컴파일한다.
+	// Compile the vertex shader
 	ID3D10Blob* vertexShaderBuffer = nullptr;
 	if (FAILED(D3DCompileFromFile(vsFilename, NULL, NULL, "ColorVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage)))
 	{
-		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
+		// If the shader failed to compile, show message
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
 		}
-		// 컴파일 오류가 아니라면 셰이더 파일을 찾을 수 없는 경우입니다.
+		// If nothing message, missed shader file
 		else
 		{
 			MessageBox(hwnd, vsFilename, L"Missing Shader File", MB_OK);
@@ -69,16 +69,16 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-	// 선체 쉐이더 코드를 컴파일합니다.
+	// Compile the hull shader
 	ID3D10Blob* hullShaderBuffer = nullptr;
 	if (FAILED(D3DCompileFromFile(hsFilename, NULL, NULL, "ColorHullShader", "hs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &hullShaderBuffer, &errorMessage)))
 	{
-		// 셰이더가 컴파일에 실패하면 오류 메시지에 무엇인가가 써 있어야합니다.
+		// If the shader failed to compile, show message
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, hsFilename);
 		}
-		// 오류 메시지에 아무 것도 없으면 단순히 셰이더 파일 자체를 찾을 수 없습니다.
+		// If nothing message, missed shader file
 		else
 		{
 			MessageBox(hwnd, hsFilename, L"Missing Shader File", MB_OK);
@@ -87,16 +87,16 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-	// 도메인 쉐이더 코드를 컴파일한다.
+	// Compile the domain shader
 	ID3D10Blob* domainShaderBuffer = nullptr;
 	if (FAILED(D3DCompileFromFile(dsFilename, NULL, NULL, "ColorDomainShader", "ds_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &domainShaderBuffer, &errorMessage)))
 	{
-		// 셰이더가 컴파일에 실패하면 오류 메시지에 무엇인가가 써 있어야합니다.
+		// If the shader failed to compile, show message
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, dsFilename);
 		}
-		// 오류 메시지에 아무 것도 없으면 단순히 셰이더 파일 자체를 찾을 수 없습니다.
+		// If nothing message, missed shader file
 		else
 		{
 			MessageBox(hwnd, dsFilename, L"Missing Shader File", MB_OK);
@@ -105,16 +105,16 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-	// 픽셀 쉐이더 코드를 컴파일한다.
+	// Compile the pixel shader
 	ID3D10Blob* pixelShaderBuffer = nullptr;
 	if (FAILED(D3DCompileFromFile(psFilename, NULL, NULL, "ColorPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage)))
 	{
-		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
+		// If the shader failed to compile, show message
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, psFilename);
 		}
-		// 컴파일 오류가 아니라면 셰이더 파일을 찾을 수 없는 경우입니다.
+		// If nothing message, missed shader file
 		else
 		{
 			MessageBox(hwnd, psFilename, L"Missing Shader File", MB_OK);
@@ -123,32 +123,31 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-	// 버퍼로부터 정점 셰이더를 생성한다.
+	// Create vertex shader from the buffer
 	if (FAILED(device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader)))
 	{
 		return false;
 	}
 
-	// 버퍼에서 선체 쉐이더를 만듭니다.
+	// Create hull shader from the buffer
 	if (FAILED(device->CreateHullShader(hullShaderBuffer->GetBufferPointer(), hullShaderBuffer->GetBufferSize(), NULL, &m_hullShader)))
 	{
 		return false;
 	}
 
-	// 버퍼에서 도메인 셰이더를 만듭니다.
+	// Create domain shader from the buffer
 	if (FAILED(device->CreateDomainShader(domainShaderBuffer->GetBufferPointer(), domainShaderBuffer->GetBufferSize(), NULL, &m_domainShader)))
 	{
 		return false;
 	}
 
-	// 버퍼에서 픽셀 쉐이더를 생성합니다.
+	// Create pixel shader from the buffer
 	if (FAILED(device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader)))
 	{
 		return false;
 	}
 
-	// 정점 입력 레이아웃 구조체를 설정합니다.
-	// 이 설정은 ModelClass와 셰이더의 VertexType 구조와 일치해야합니다.
+	// Create the vertex input layout description
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
@@ -166,16 +165,16 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
 
-	// 레이아웃의 요소 수를 가져옵니다.
+	// Get a count of layout
 	unsigned int numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
-	// 정점 입력 레이아웃을 만듭니다.
+	// Create vertex input layout
 	if (FAILED(device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &m_layout)))
 	{
 		return false;
 	}
 
-	// 더 이상 사용되지 않는 정점 셰이더 퍼버와 픽셀 셰이더 버퍼를 해제합니다.
+	// Release vertex and pixel shader buffer 
 	vertexShaderBuffer->Release();
 	vertexShaderBuffer = 0;
 
@@ -188,7 +187,7 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
 
-	// 정점 셰이더에 있는 행렬 상수 버퍼의 구조체를 작성합니다.
+	// Set description of the matrix dynamic constant buffer in the vertex shader.
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
@@ -197,13 +196,14 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
-	// 상수 버퍼 포인터를 만들어 이 클래스에서 정점 셰이더 상수 버퍼에 접근할 수 있게 합니다.
+	// Create matrix constant buffer pointer
 	if (FAILED(device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer)))
 	{
 		return false;
 	}
 
-	// 선체 셰이더에있는 동적 테셀레이션 상수 버퍼의 설명을 설정합니다.
+
+	// Set description of the tessellation dynamic buffer in the hull shader
 	D3D11_BUFFER_DESC tessellationBufferDesc;
 	tessellationBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	tessellationBufferDesc.ByteWidth = sizeof(TessellationBufferType);
@@ -212,7 +212,7 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	tessellationBufferDesc.MiscFlags = 0;
 	tessellationBufferDesc.StructureByteStride = 0;
 
-	// 이 클래스 내에서 선체 쉐이더 상수 버퍼에 액세스 할 수 있도록 상수 버퍼 포인터를 만듭니다.
+	// Create tessellation constant buffer pointer
 	if (FAILED(device->CreateBuffer(&tessellationBufferDesc, NULL, &m_tessellationBuffer)))
 	{
 		return false;
@@ -224,50 +224,44 @@ bool TessellationShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 
 void TessellationShaderClass::ShutdownShader()
 {
-	// 테셀레이션 상수 버퍼를 해제합니다.
+	// Release buffers
 	if (m_tessellationBuffer)
 	{
 		m_tessellationBuffer->Release();
 		m_tessellationBuffer = 0;
 	}
 
-	// 행렬 상수 버퍼를 해제합니다.
 	if (m_matrixBuffer)
 	{
 		m_matrixBuffer->Release();
 		m_matrixBuffer = 0;
 	}
 
-	// 레이아웃을 해제합니다.
 	if (m_layout)
 	{
 		m_layout->Release();
 		m_layout = 0;
 	}
 
-	// 픽셀 쉐이더를 해제합니다.
 	if (m_pixelShader)
 	{
 		m_pixelShader->Release();
 		m_pixelShader = 0;
 	}
 
-	// 도메인 셰이더를 놓습니다.
 	if (m_domainShader)
 	{
 		m_domainShader->Release();
 		m_domainShader = 0;
 	}
 
-	// 선체 셰이더를 놓습니다.
 	if (m_hullShader)
 	{
 		m_hullShader->Release();
 		m_hullShader = 0;
 	}
 
-	// 버텍스 쉐이더를 놓습니다.
-	if (m_vertexShader)
+	// 버텍스 쉐이더를 놓습니다.	if (m_vertexShader)
 	{
 		m_vertexShader->Release();
 		m_vertexShader = 0;
@@ -277,14 +271,14 @@ void TessellationShaderClass::ShutdownShader()
 
 void TessellationShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, const WCHAR* shaderFilename)
 {
-	// 에러 메시지를 출력창에 표시합니다.
+	// Get a pointer to the error message text buffer.
 	OutputDebugStringA(reinterpret_cast<const char*>(errorMessage->GetBufferPointer()));
 
-	// 에러 메세지를 반환합니다.
+	// Return error message
 	errorMessage->Release();
 	errorMessage = 0;
 
-	// 컴파일 에러가 있음을 팝업 메세지로 알려줍니다.
+	// Pop a message 
 	MessageBox(hwnd, L"Error compiling shader.", shaderFilename, MB_OK);
 }
 
@@ -292,55 +286,55 @@ void TessellationShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage,
 bool TessellationShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, float tessellationAmount)
 {
-	// 행렬을 transpose하여 셰이더에서 사용할 수 있게 합니다
+	// Transpose the matrices for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	// 상수 버퍼의 내용을 쓸 수 있도록 잠급니다.
+	// Lock the matrix constant buffer
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	if (FAILED(deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 	{
 		return false;
 	}
 
-	// 상수 버퍼의 데이터에 대한 포인터를 가져옵니다.
+	// Get a pointer to the data
 	MatrixBufferType* dataPtr = (MatrixBufferType*)mappedResource.pData;
 
-	// 상수 버퍼에 행렬을 복사합니다.
+	// Copy datas
 	dataPtr->world = worldMatrix;
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
-	// 상수 버퍼의 잠금을 풉니다.
+	// Unlock the matrix constant buffer
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
-	// 정점 셰이더에서의 상수 버퍼의 위치를 설정합니다.
+	// Set the position of the matrix constant buffer in the vertex shader
 	unsigned bufferNumber = 0;
 
-	// 마지막으로 업데이트 된 값으로 도메인 셰이더의 행렬 상수 버퍼를 설정합니다.
+	// Set the matrix constant buffer in the domain shader with the updated values.
 	deviceContext->DSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
 
-	// 테설레이션 상수 버퍼를 쓸 수 있도록 잠금합니다.
+	// Lock the tessellation constant buffer
 	if (FAILED(deviceContext->Map(m_tessellationBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 	{
 		return false;
 	}
 
-	// 테셀레이션 상수 버퍼의 데이터에 대한 포인터를 가져옵니다.
+	// Get a pointer to the data
 	TessellationBufferType* dataPtr2 = (TessellationBufferType*)mappedResource.pData;
 
-	// 테셀레이션 데이터를 상수 버퍼에 복사합니다.
+	// Copy datas
 	dataPtr2->tessellationAmount = tessellationAmount;
 	dataPtr2->padding = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-	// 테설레이션 상수 버퍼의 잠금을 해제합니다.
+	// Unlock the tessellation constant buffer
 	deviceContext->Unmap(m_tessellationBuffer, 0);
 
-	// 선체 셰이더에 테셀레이션 상수 버퍼의 위치를 ​​설정합니다.
+	// Set the position of the tessellation constant buffer in the vertex shader
 	bufferNumber = 0;
 
-	// 이제 업데이트 된 값으로 선체 쉐이더에서 테셀레이션 상수 버퍼를 설정합니다.
+	// Set the matrix constant buffer in the hull shader with the updated values.
 	deviceContext->HSSetConstantBuffers(bufferNumber, 1, &m_tessellationBuffer);
 
 	return true;
@@ -349,15 +343,15 @@ bool TessellationShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCon
 
 void TessellationShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
-	// 정점 입력 레이아웃을 설정합니다.
+	// Set the vertex input layout
 	deviceContext->IASetInputLayout(m_layout);
 
-	// 삼각형을 그릴 정점 셰이더와 픽셀 셰이더를 설정합니다.
+	// Set the vertex and pixel shaders
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->HSSetShader(m_hullShader, NULL, 0);
 	deviceContext->DSSetShader(m_domainShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
-	// 삼각형을 그립니다.
+	// Render the triangles
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 }

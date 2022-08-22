@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "Imgui/imgui.h"
-#include "Imgui/imgui_impl_dx11.h"
-#include "Imgui/imgui_impl_win32.h"
+#include "Utils/Imgui/imgui.h"
+#include "Utils/Imgui/imgui_impl_dx11.h"
+#include "Utils/Imgui/imgui_impl_win32.h"
 #include "Application.h"
 
 Application* mAPPLICATION = nullptr;

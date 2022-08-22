@@ -5,7 +5,7 @@
 /////////////
 // POSITION, DIFFUSE, NORMAL 
 // TODO : DEPTH, SPEC, MOTION BLUR..
-const int BUFFER_COUNT = 3;
+const int BUFFER_COUNT = 4;
 
 
 class DeferredBuffersClass

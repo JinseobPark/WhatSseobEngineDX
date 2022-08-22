@@ -412,9 +412,10 @@ bool ShaderManagerClass::RenderTessellationShader(ID3D11DeviceContext* deviceCon
 }
 
 bool ShaderManagerClass::RenderDeferredMultiLightShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture,
+			vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
 {
-	return m_DeferredMultiLightShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, dir, point, spot);
+	return m_DeferredMultiLightShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot);
 }
 
 // Initialize Light Buffer. This active in initialize step

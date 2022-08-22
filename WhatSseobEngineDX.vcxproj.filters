@@ -18,10 +18,10 @@
     <ClInclude Include="Src\Utils\AlignedAllocationPolicy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\BumpMapShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\BumpMapShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\TessellationShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\TessellationShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Graphics\D3DClass.h">
@@ -33,40 +33,40 @@
     <ClInclude Include="Src\Systems\Graphics\DeferredBuffersClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\DeferredShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DeferredShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Utils\DxDefine.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\GlowMapShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\GlowMapShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\GlowShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\GlowShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Input\inputClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\MultiLightShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\MultiLightShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Graphics\OrthoWindowClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\ParticleShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\ParticleShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\ProjectionShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Graphics\RenderTextureClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\ShaderManagerClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\ShadowDirectionalShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\ShadowDirectionalShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Sound\SoundClass.h">
@@ -78,43 +78,43 @@
     <ClInclude Include="Src\Utils\targetver.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\TextureInstanceShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\TextureInstanceShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\TextureShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\TextureShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Timer\TimerClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\TransparentDepthShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\TransparentDepthShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\VerticalBlurShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\VerticalBlurShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imconfig.h">
+    <ClInclude Include="Src\Utils\Imgui\imconfig.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imgui.h">
+    <ClInclude Include="Src\Utils\Imgui\imgui.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imgui_impl_dx11.h">
+    <ClInclude Include="Src\Utils\Imgui\imgui_impl_dx11.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imgui_impl_win32.h">
+    <ClInclude Include="Src\Utils\Imgui\imgui_impl_win32.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imgui_internal.h">
+    <ClInclude Include="Src\Utils\Imgui\imgui_internal.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imstb_rectpack.h">
+    <ClInclude Include="Src\Utils\Imgui\imstb_rectpack.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imstb_textedit.h">
+    <ClInclude Include="Src\Utils\Imgui\imstb_textedit.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Imgui\imstb_truetype.h">
+    <ClInclude Include="Src\Utils\Imgui\imstb_truetype.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Object\ObjectClass.h">
@@ -186,21 +186,21 @@
     <ClInclude Include="Src\Component\Sprite\Model\ModelTessellation.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\DeferredMultiLightShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DeferredMultiLightShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Component\Camera\Camera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ShaderClass\HorizontalBlurShaderClass.h">
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\HorizontalBlurShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\ShaderClass\BumpMapShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\BumpMapShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\TessellationShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\TessellationShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Graphics\D3DClass.cpp">
@@ -212,13 +212,13 @@
     <ClCompile Include="Src\Systems\Graphics\DeferredBuffersClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\DeferredShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DeferredShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\GlowMapShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\GlowMapShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\GlowShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\GlowShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Input\inputClass.cpp">
@@ -227,25 +227,25 @@
     <ClCompile Include="Src\main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\MultiLightShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\MultiLightShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Graphics\OrthoWindowClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\ParticleShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\ParticleShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\ProjectionShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Graphics\RenderTextureClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\ShaderManagerClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\ShadowDirectionalShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\ShadowDirectionalShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Sound\SoundClass.cpp">
@@ -254,37 +254,37 @@
     <ClCompile Include="Src\stdafx.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\TextureInstanceShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\TextureInstanceShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\TextureShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\TextureShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Timer\TimerClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\TransparentDepthShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\TransparentDepthShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\VerticalBlurShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\VerticalBlurShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui_draw.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui_draw.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui_impl_dx11.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui_impl_dx11.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui_impl_win32.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui_impl_win32.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui_tables.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui_tables.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Imgui\imgui_widgets.cpp">
+    <ClCompile Include="Src\Utils\Imgui\imgui_widgets.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\ObjectClass.cpp">
@@ -338,13 +338,13 @@
     <ClCompile Include="Src\Component\Sprite\Model\ModelTessellation.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\DeferredMultiLightShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DeferredMultiLightShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Component\Camera\Camera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\ShaderClass\HorizontalBlurShaderClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\HorizontalBlurShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

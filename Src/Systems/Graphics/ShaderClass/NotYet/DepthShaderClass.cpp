@@ -1,41 +1,41 @@
 #include "stdafx.h"
-#include "ParticleShaderClass.h"
+#include "depthshaderclass.h"
 
 
-ParticleShaderClass::ParticleShaderClass()
+DepthShaderClass::DepthShaderClass()
 {
 }
 
 
-ParticleShaderClass::ParticleShaderClass(const ParticleShaderClass& other)
+DepthShaderClass::DepthShaderClass(const DepthShaderClass& other)
 {
 }
 
 
-ParticleShaderClass::~ParticleShaderClass()
+DepthShaderClass::~DepthShaderClass()
 {
 }
 
 
-bool ParticleShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool DepthShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	// 정점 및 픽셀 쉐이더를 초기화합니다.
-	return InitializeShader(device, hwnd, L"data/hlsl/particle_vs.hlsl", L"data/hlsl/particle_ps.hlsl");
+	return InitializeShader(device, hwnd, L"data/hlsl/depthvs.hlsl", L"data/hlsl/depthps.hlsl");
 }
 
 
-void ParticleShaderClass::Shutdown()
+void DepthShaderClass::Shutdown()
 {
 	// 버텍스 및 픽셀 쉐이더와 관련된 객체를 종료합니다.
 	ShutdownShader();
 }
 
 
-bool ParticleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+bool DepthShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+	XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
 {
 	// 렌더링에 사용할 셰이더 매개 변수를 설정합니다.
-	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture))
+	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix))
 	{
 		return false;
 	}
@@ -47,13 +47,13 @@ bool ParticleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCo
 }
 
 
-bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHAR* vsFilename, const WCHAR* psFilename)
+bool DepthShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHAR* vsFilename, const WCHAR* psFilename)
 {
 	ID3D10Blob* errorMessage = nullptr;
 
 	// 버텍스 쉐이더 코드를 컴파일한다.
 	ID3D10Blob* vertexShaderBuffer = nullptr;
-	if (FAILED(D3DCompileFromFile(vsFilename, NULL, NULL, "ParticleVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage)))
+	if (FAILED(D3DCompileFromFile(vsFilename, NULL, NULL, "DepthVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage)))
 	{
 		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
 		if (errorMessage)
@@ -71,7 +71,7 @@ bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, cons
 
 	// 픽셀 쉐이더 코드를 컴파일한다.
 	ID3D10Blob* pixelShaderBuffer = nullptr;
-	if (FAILED(D3DCompileFromFile(psFilename, NULL, NULL, "ParticlePixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage)))
+	if (FAILED(D3DCompileFromFile(psFilename, NULL, NULL, "DepthPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage)))
 	{
 		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
 		if (errorMessage)
@@ -93,7 +93,6 @@ bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, cons
 		return false;
 	}
 
-
 	// 버퍼에서 픽셀 쉐이더를 생성합니다.
 	if (FAILED(device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader)))
 	{
@@ -102,7 +101,7 @@ bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, cons
 
 	// 정점 입력 레이아웃 구조체를 설정합니다.
 	// 이 설정은 ModelClass와 셰이더의 VertexType 구조와 일치해야합니다.
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[1];
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
 	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -110,22 +109,6 @@ bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, cons
 	polygonLayout[0].AlignedByteOffset = 0;
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
-
-	polygonLayout[1].SemanticName = "TEXCOORD";
-	polygonLayout[1].SemanticIndex = 0;
-	polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	polygonLayout[1].InputSlot = 0;
-	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[1].InstanceDataStepRate = 0;
-
-	polygonLayout[2].SemanticName = "COLOR";
-	polygonLayout[2].SemanticIndex = 0;
-	polygonLayout[2].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	polygonLayout[2].InputSlot = 0;
-	polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[2].InstanceDataStepRate = 0;
 
 	// 레이아웃의 요소 수를 가져옵니다.
 	unsigned int numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -158,41 +141,12 @@ bool ParticleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, cons
 		return false;
 	}
 
-	// 텍스처 샘플러 상태 설명을 만듭니다.
-	D3D11_SAMPLER_DESC samplerDesc;
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// 텍스처 샘플러 상태를 만듭니다.
-	if (FAILED(device->CreateSamplerState(&samplerDesc, &m_sampleState)))
-	{
-		return false;
-	}
-
 	return true;
 }
 
 
-void ParticleShaderClass::ShutdownShader()
+void DepthShaderClass::ShutdownShader()
 {
-	// 샘플러 상태를 해제한다.
-	if (m_sampleState)
-	{
-		m_sampleState->Release();
-		m_sampleState = 0;
-	}
-
 	// 행렬 상수 버퍼를 해제합니다.
 	if (m_matrixBuffer)
 	{
@@ -214,7 +168,7 @@ void ParticleShaderClass::ShutdownShader()
 		m_pixelShader = 0;
 	}
 
-	// 버텍스 쉐이더를 놓습니다.
+	// 버텍스 쉐이더를 해제합니다.
 	if (m_vertexShader)
 	{
 		m_vertexShader->Release();
@@ -223,7 +177,7 @@ void ParticleShaderClass::ShutdownShader()
 }
 
 
-void ParticleShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, const WCHAR* shaderFilename)
+void DepthShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, const WCHAR* shaderFilename)
 {
 	// 에러 메시지를 출력창에 표시합니다.
 	OutputDebugStringA(reinterpret_cast<const char*>(errorMessage->GetBufferPointer()));
@@ -237,8 +191,7 @@ void ParticleShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWN
 }
 
 
-bool ParticleShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+bool DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
 {
 	// 행렬을 transpose하여 셰이더에서 사용할 수 있게 합니다
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -266,17 +219,14 @@ bool ParticleShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	// 정점 셰이더에서의 상수 버퍼의 위치를 설정합니다.
 	unsigned bufferNumber = 0;
 
-	// 이제 업데이트 된 값으로 버텍스 쉐이더에서 상수 버퍼를 설정합니다.
+	// 마지막으로 정점 셰이더의 상수 버퍼를 바뀐 값으로 바꿉니다.
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
-
-	// 픽셀 셰이더에서 셰이더 텍스처 리소스를 설정합니다.
-	deviceContext->PSSetShaderResources(0, 1, &texture);
 
 	return true;
 }
 
 
-void ParticleShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void DepthShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// 정점 입력 레이아웃을 설정합니다.
 	deviceContext->IASetInputLayout(m_layout);
@@ -285,9 +235,6 @@ void ParticleShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int i
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
-	// 픽셀 쉐이더에서 샘플러 상태를 설정합니다.
-	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
-
-	// 삼각형을 렌더링합니다.
+	// 삼각형을 그립니다.
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 }

@@ -9,6 +9,7 @@
 Texture2D posTexture : register(t0);
 Texture2D colorTexture : register(t1);
 Texture2D normalTexture : register(t2);
+Texture2D depthTexture : register(t3);
 
 
 ///////////////////
@@ -101,32 +102,43 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
     float4 positions;
 	float3 colors;
 	float3 normals;
+    float depths;
     
     // Get informatino from textures
     positions = posTexture.Sample(SampleTypePoint, input.tex);
-    colors = colorTexture.Sample(SampleTypePoint, input.tex);
+    colors = colorTexture.Sample(SampleTypePoint, input.tex).xyz;
 	normals = normalTexture.Sample(SampleTypePoint, input.tex).xyz;
-    
     normalize(normals);
+    depths = depthTexture.Sample(SampleTypePoint, input.tex).r;
     
     float3 result = float3(0, 0, 0);
     
-    //dir light calculation
-    for (int i = 0; i < dirCount; i++)
+    if(depths.r > 0.0f)
     {
-       result += CalcDirLight(dirlight[i], normals, colors);
-    }
+         //dir light calculation
+        for (int i = 0; i < dirCount; i++)
+        {
+            result += CalcDirLight(dirlight[i], normals, colors);
+        }
+        
+        //point light calculation
+        for (int i = 0; i < pointCount; i++)
+        {
+            result += CalcPointLight(pointlight[i], normals, positions.xyz, colors);
+        }
+        
+        //spot light calculation
+        for (int i = 0; i < spotCount; i++)
+        {
+            result += CalcSpotLight(spotlight[i], normals, positions.xyz, colors);
+        }
     
-    for (int i = 0; i < pointCount; i++)
+    }
+    else
     {
-        result += CalcPointLight(pointlight[i], normals, positions.xyz, colors);
+        result = (0.0f, 0.0f, 0.0f);
+
     }
-    
-    for (int i = 0; i < spotCount; i++)
-    {
-        result += CalcSpotLight(spotlight[i], normals, positions.xyz, colors);
-    }
-    
     return float4(result, 1.0f);
     
     }

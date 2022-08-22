@@ -8,9 +8,9 @@
 #include "Systems/Graphics/Graphics.h"
 #include "Object/ObjectFactory.h"
 #include "Object/ObjectClass.h"
-#include "Imgui/imgui.h"
-#include "Imgui/imgui_impl_dx11.h"
-#include "Imgui/imgui_impl_win32.h"
+#include "Utils/Imgui/imgui.h"
+#include "Utils/Imgui/imgui_impl_dx11.h"
+#include "Utils/Imgui/imgui_impl_win32.h"
 #include "Component/Transform.h"
 #include "WhatSseobEngine.h"
 

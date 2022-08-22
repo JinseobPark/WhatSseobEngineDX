@@ -31,10 +31,11 @@ void DeferredMultiLightShaderClass::Shutdown()
 
 
 bool DeferredMultiLightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture, 
+	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
 {
 	// Set shader parameters
-	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, dir, point, spot))
+	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot))
 	{
 		return false;
 	}
@@ -422,7 +423,8 @@ void DeferredMultiLightShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMe
 }
 
 bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture, 
+	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
 {
 	// Transpose the matrices for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -457,6 +459,7 @@ bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* dev
 	deviceContext->PSSetShaderResources(0, 1, &posTexture);
 	deviceContext->PSSetShaderResources(1, 1, &colorTexture);
 	deviceContext->PSSetShaderResources(2, 1, &normalTexture);
+	deviceContext->PSSetShaderResources(3, 1, &depthTexture);
 
 	// Lock the light constant buffer
 	if (FAILED(deviceContext->Map(m_lightCountBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))

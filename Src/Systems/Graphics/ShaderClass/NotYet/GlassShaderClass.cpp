@@ -1,42 +1,44 @@
 ﻿#include "stdafx.h"
-#include "glowshaderclass.h"
+#include "GlassShaderClass.h"
 
 
-GlowShaderClass::GlowShaderClass()
+GlassShaderClass::GlassShaderClass()
 {
 }
 
 
-GlowShaderClass::GlowShaderClass(const GlowShaderClass& other)
+GlassShaderClass::GlassShaderClass(const GlassShaderClass& other)
 {
 }
 
 
-GlowShaderClass::~GlowShaderClass()
+GlassShaderClass::~GlassShaderClass()
 {
 }
 
 
-bool GlowShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool GlassShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	// 정점 및 픽셀 쉐이더를 초기화합니다.
-	return InitializeShader(device, hwnd, L"data/hlsl/glow_vs.hlsl", L"data/hlsl/glow_ps.hlsl");
+	return InitializeShader(device, hwnd, L"data/hlsl/glassvs.hlsl", L"data/hlsl/glassps.hlsl");
 }
 
 
-void GlowShaderClass::Shutdown()
+void GlassShaderClass::Shutdown()
 {
 	// 버텍스 및 픽셀 쉐이더와 관련된 객체를 종료합니다.
 	ShutdownShader();
 }
 
 
-bool GlowShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* glowTexture,
-	float glowStrength)
+bool GlassShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture,
+	ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* refractionTexture,
+	float refractionScale)
 {
 	// 렌더링에 사용할 셰이더 매개 변수를 설정합니다.
-	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, colorTexture, glowTexture, glowStrength))
+	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, colorTexture,
+		normalTexture, refractionTexture, refractionScale))
 	{
 		return false;
 	}
@@ -48,14 +50,14 @@ bool GlowShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 }
 
 
-bool GlowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHAR* vsFilename, const WCHAR* psFilename)
+bool GlassShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHAR* vsFilename, const WCHAR* psFilename)
 {
 	HRESULT result;
 	ID3D10Blob* errorMessage = nullptr;
 
 	// 버텍스 쉐이더 코드를 컴파일한다.
 	ID3D10Blob* vertexShaderBuffer = nullptr;
-	result = D3DCompileFromFile(vsFilename, NULL, NULL, "GlowVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage);
+	result = D3DCompileFromFile(vsFilename, NULL, NULL, "GlassVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
 		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
@@ -74,7 +76,7 @@ bool GlowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WC
 
 	// 픽셀 쉐이더 코드를 컴파일한다.
 	ID3D10Blob* pixelShaderBuffer = nullptr;
-	result = D3DCompileFromFile(psFilename, NULL, NULL, "GlowPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage);
+	result = D3DCompileFromFile(psFilename, NULL, NULL, "GlassPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
 		// 셰이더 컴파일 실패시 오류메시지를 출력합니다.
@@ -142,39 +144,7 @@ bool GlowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WC
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
 
-	// 정점 셰이더에 있는 행렬 상수 버퍼의 구조체를 작성합니다.
-	D3D11_BUFFER_DESC matrixBufferDesc;
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.MiscFlags = 0;
-	matrixBufferDesc.StructureByteStride = 0;
-
-	// 상수 버퍼 포인터를 만들어 이 클래스에서 정점 셰이더 상수 버퍼에 접근할 수 있게 합니다.
-	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	// 픽셀 쉐이더에있는 동적 글로우 상수 버퍼의 설명을 설정합니다.
-	D3D11_BUFFER_DESC glowBufferDesc;
-	glowBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	glowBufferDesc.ByteWidth = sizeof(GlowBufferType);
-	glowBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	glowBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	glowBufferDesc.MiscFlags = 0;
-	glowBufferDesc.StructureByteStride = 0;
-
-	// 이 클래스 내에서 픽셀 쉐이더 상수 버퍼에 액세스 할 수 있도록 상수 버퍼 포인터를 만듭니다.
-	result = device->CreateBuffer(&glowBufferDesc, NULL, &m_glowBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	// 텍스처 샘플러 상태 설명을 만듭니다.
+	// 텍스처 샘플러 상태 구조체를 생성 및 설정합니다.
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -197,24 +167,49 @@ bool GlowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, const WC
 		return false;
 	}
 
+	// 버텍스 쉐이더에있는 행렬 동적 상수 버퍼의 설명을 설정합니다.
+	D3D11_BUFFER_DESC matrixBufferDesc;
+	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixBufferDesc.MiscFlags = 0;
+	matrixBufferDesc.StructureByteStride = 0;
+
+	// 이 클래스 내에서 정점 셰이더 상수 버퍼에 액세스 할 수 있도록 상수 버퍼 포인터를 만듭니다.
+	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// 픽셀 쉐이더에있는 유리 동적 상수 버퍼의 설명을 설정합니다.
+	D3D11_BUFFER_DESC glassBufferDesc;
+	glassBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	glassBufferDesc.ByteWidth = sizeof(GlassBufferType);
+	glassBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	glassBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	glassBufferDesc.MiscFlags = 0;
+	glassBufferDesc.StructureByteStride = 0;
+
+	// 이 클래스 내에서 픽셀 쉐이더 상수 버퍼에 액세스 할 수 있도록 상수 버퍼 포인터를 만듭니다.
+	result = device->CreateBuffer(&glassBufferDesc, NULL, &m_glassBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
 	return true;
 }
 
 
-void GlowShaderClass::ShutdownShader()
+void GlassShaderClass::ShutdownShader()
 {
-	// 샘플러 상태를 해제한다.
-	if (m_sampleState)
+	// 유리 상수 버퍼를 놓습니다.
+	if (m_glassBuffer)
 	{
-		m_sampleState->Release();
-		m_sampleState = 0;
-	}
-
-	// 글로우 상수 버퍼를 해제합니다.
-	if (m_glowBuffer)
-	{
-		m_glowBuffer->Release();
-		m_glowBuffer = 0;
+		m_glassBuffer->Release();
+		m_glassBuffer = 0;
 	}
 
 	// 행렬 상수 버퍼를 해제합니다.
@@ -224,6 +219,13 @@ void GlowShaderClass::ShutdownShader()
 		m_matrixBuffer = 0;
 	}
 
+	// 샘플러 상태를 해제한다.
+	if (m_sampleState)
+	{
+		m_sampleState->Release();
+		m_sampleState = 0;
+	}
+
 	// 레이아웃을 해제합니다.
 	if (m_layout)
 	{
@@ -231,14 +233,14 @@ void GlowShaderClass::ShutdownShader()
 		m_layout = 0;
 	}
 
-	// 픽셀 쉐이더를 해제합니다.
+	// 픽셀 쉐이더를 놓습니다.
 	if (m_pixelShader)
 	{
 		m_pixelShader->Release();
 		m_pixelShader = 0;
 	}
 
-	// 버텍스 쉐이더를 해제합니다.
+	// 버텍스 쉐이더를 놓습니다.
 	if (m_vertexShader)
 	{
 		m_vertexShader->Release();
@@ -247,7 +249,7 @@ void GlowShaderClass::ShutdownShader()
 }
 
 
-void GlowShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, const WCHAR* shaderFilename)
+void GlassShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, const WCHAR* shaderFilename)
 {
 	// 에러 메시지를 출력창에 표시합니다.
 	OutputDebugStringA(reinterpret_cast<const char*>(errorMessage->GetBufferPointer()));
@@ -261,9 +263,10 @@ void GlowShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hw
 }
 
 
-bool GlowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+bool GlassShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture,
-	ID3D11ShaderResourceView* glowTexture, float glowStrength)
+	ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* refractionTexture,
+	float refractionScale)
 {
 	// 행렬을 transpose하여 셰이더에서 사용할 수 있게 합니다
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -294,37 +297,38 @@ bool GlowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XM
 	// 마지막으로 정점 셰이더의 상수 버퍼를 바뀐 값으로 바꿉니다.
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
 
-	// 쓸 수 있도록 상수 버퍼를 잠급니다.
-	if (FAILED(deviceContext->Map(m_glowBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
+	// 픽셀 쉐이더에 3 개의 쉐이더 텍스처 리소스를 설정합니다.
+	deviceContext->PSSetShaderResources(0, 1, &colorTexture);
+	deviceContext->PSSetShaderResources(1, 1, &normalTexture);
+	deviceContext->PSSetShaderResources(2, 1, &refractionTexture);
+
+	// 쓸 수 있도록 유리 상수 버퍼를 잠급니다.
+	if (FAILED(deviceContext->Map(m_glassBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 	{
 		return false;
 	}
 
-	// 상수 버퍼의 데이터에 대한 포인터를 가져옵니다.
-	GlowBufferType* dataPtr2 = (GlowBufferType*)mappedResource.pData;
+	// 유리 상수 버퍼의 데이터에 대한 포인터를 가져옵니다.
+	GlassBufferType* dataPtr2 = (GlassBufferType*)mappedResource.pData;
 
-	// 데이터를 상수 버퍼에 복사합니다.
-	dataPtr2->glowStrength = glowStrength;
+	// 변수를 유리 상수 버퍼에 복사합니다.
+	dataPtr2->refractionScale = refractionScale;
 	dataPtr2->padding = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-	// 상수 버퍼의 잠금을 해제합니다.
-	deviceContext->Unmap(m_glowBuffer, 0);
+	// 유리 상수 버퍼의 잠금을 해제합니다.
+	deviceContext->Unmap(m_glassBuffer, 0);
 
-	// 픽셀 쉐이더에서 상수 버퍼의 위치를 ​​설정합니다.
+	// 픽셀 쉐이더에서 유리 상수 버퍼의 위치를 ​​설정합니다.
 	bufferNumber = 0;
 
-	// 업데이트 된 값으로 픽셀 쉐이더에 상수 버퍼를 설정합니다.
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_glowBuffer);
-
-	// 픽셀 셰이더에서 셰이더 텍스처 리소스를 설정합니다.
-	deviceContext->PSSetShaderResources(0, 1, &colorTexture);
-	deviceContext->PSSetShaderResources(1, 1, &glowTexture);
+	// 업데이트 된 값으로 픽셀 쉐이더에 유리 상수 버퍼를 설정합니다.
+	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_glassBuffer);
 
 	return true;
 }
 
 
-void GlowShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void GlassShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// 정점 입력 레이아웃을 설정합니다.
 	deviceContext->IASetInputLayout(m_layout);

@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "d3dclass.h"
-#include "Imgui/imgui.h"
-#include "Imgui/imgui_impl_dx11.h"
-#include "Imgui/imgui_impl_win32.h"
+#include "Utils/Imgui/imgui.h"
+#include "Utils/Imgui/imgui_impl_dx11.h"
+#include "Utils/Imgui/imgui_impl_win32.h"
 #include "Systems/Application/Application.h"
 #include "Graphics.h"
 #include "ShaderClass/shadermanagerclass.h"
@@ -361,7 +361,7 @@ void Graphics::RenderDeferred()
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
 	m_ShaderManager->RenderDeferredMultiLightShader(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
-		m_DeferredBuffers->GetShaderResourceView(0), m_DeferredBuffers->GetShaderResourceView(1), m_DeferredBuffers->GetShaderResourceView(2), m_dirLights, m_pointLights, m_spotLights);
+		m_DeferredBuffers->GetShaderResourceView(0), m_DeferredBuffers->GetShaderResourceView(1), m_DeferredBuffers->GetShaderResourceView(2), m_DeferredBuffers->GetShaderResourceView(3), m_dirLights, m_pointLights, m_spotLights);
 
 	// Turn Zbuffer back
 	m_Direct3D->TurnZBufferOn();
@@ -402,6 +402,11 @@ void Graphics::RenderTexture()
 		//Resource 2 : NORMAL
 		if (!m_ShaderManager->RenderTextureShader(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
 			m_DeferredBuffers->GetShaderResourceView(2))) return;
+		break;
+	case 4:
+		//Resource 2 : NORMAL
+		if (!m_ShaderManager->RenderTextureShader(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
+			m_DeferredBuffers->GetShaderResourceView(3))) return;
 		break;
 	default :
 		//Resource DEFAULT : POSITION
@@ -534,7 +539,7 @@ void Graphics::ImguiUpdate(float dt)
 	ImGui::Text("Hello Whatsseob.");               // Test text
 	ImGui::Checkbox("Deferred", &g_data->isDeferred);      // bool box. Decide deferred or forward
 	ImGui::Checkbox("resource", &g_data->isResources);      // bool box. Decide render deferred  or render deferred resource.
-	ImGui::SliderInt("resourceNumber", &g_data->resourceN, 1, 3);      // pick int. Decide resourece number
+	ImGui::SliderInt("resourceNumber", &g_data->resourceN, 1, 4);      // pick int. Decide resourece number
 	ImGui::SliderInt("Camera Number", &g_data->CameraNumber, 1, m_Camera.size());      // pick int. Pick Camera number. 
 	m_CameraNumber = g_data->CameraNumber;
 	ImGui::SliderFloat("Tessellation Amount", &g_data->tessellationAmount, 1.0f, 10.0f);            // float slider. set tessellation amount

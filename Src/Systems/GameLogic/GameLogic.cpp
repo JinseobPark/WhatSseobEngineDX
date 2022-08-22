@@ -83,7 +83,6 @@ void GameLogic::Initialize()
 	Object* light1;
 	light1 = OBJECT_FACTORY->CreateEmptyObject("light1");
 	{
-
 		DirLight* dirL = new DirLight();
 		dirL->m_diffuse = XMFLOAT4(0.0f, 0.5, 0.5, 1.0f);
 		dirL->m_direction = XMFLOAT3(0.0f, 0.0f, -1.0f);
@@ -93,9 +92,10 @@ void GameLogic::Initialize()
 		dirL2->m_diffuse = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 		dirL2->m_direction = XMFLOAT3(0.5f, -0.5f, 0.0f);
 		light1->AddComponent(dirL2);
+		light1->Initialize();
 	}
-	light1->Initialize();
 	
+
 	Object* light2;
 	light2 = OBJECT_FACTORY->CreateEmptyObject("light2");
 	{
