@@ -34,6 +34,7 @@ private:
 		float padding2;
 		XMFLOAT4 m_ambient;
 		XMFLOAT4 m_diffuse;
+		XMMATRIX m_lightVP;
 	};
 
 	struct PointLightBufferType
@@ -68,7 +69,7 @@ public:
 
 	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
+	bool Render(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow);
 	//bool Render(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, std::vector<DirLight>);
 
 	bool InitializeLightBuffer(vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
@@ -78,7 +79,7 @@ private:
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, const WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
+	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow);
 	void RenderShader(ID3D11DeviceContext*, int);
 
 	void UpdateLightInfo();
@@ -86,7 +87,10 @@ private:
 	ID3D11VertexShader* m_vertexShader = nullptr;
 	ID3D11PixelShader* m_pixelShader = nullptr;
 	ID3D11InputLayout* m_layout = nullptr;
-	ID3D11SamplerState* m_sampleState = nullptr;
+	//ID3D11SamplerState* m_sampleState = nullptr;
+	ID3D11SamplerState* m_sampleStateWrap = nullptr;
+	ID3D11SamplerState* m_sampleStateClamp = nullptr;
+	ID3D11SamplerState* m_sampleStateShadow = nullptr;
 	ID3D11Buffer* m_matrixBuffer = nullptr;
 
 	ID3D11Buffer* m_lightCountBuffer = nullptr;

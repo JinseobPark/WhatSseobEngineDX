@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: deferredmultilight_vs.hlsl
+// Filename: Depth_inst_VS.hlsl
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -13,43 +13,45 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
+
 //////////////
 // TYPEDEFS //
 //////////////
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 tex : TEXCOORD0;
+    float4 position : POSITION;
+    float3 instancePosition : TEXCOORD1;
 };
 
 struct PixelInputType
 {
-	float4 position : SV_POSITION;
-    float2 tex : TEXCOORD0;
-    float4 PosWorld : POSITION0;
+    float4 position : SV_POSITION;
+    float4 depthPosition : TEXTURE0;
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
-PixelInputType LightVertexShader(VertexInputType input)
+PixelInputType DepthVertexShader(VertexInputType input)
 {
-    PixelInputType output = (PixelInputType)0;
+    PixelInputType output;
     
 
 	// 적절한 행렬 계산을 위해 위치 벡터를 4 단위로 변경합니다.
-	input.position.w = 1.0f;
+    input.position.w = 1.0f;
+    
+    input.position.x += input.instancePosition.x;
+    input.position.y += input.instancePosition.y;
+    input.position.z += input.instancePosition.z;
 
 	// 월드, 뷰 및 투영 행렬에 대한 정점의 위치를 ​​계산합니다.
     output.position = mul(input.position, worldMatrix);
-    output.PosWorld = output.position;
-	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, projectionMatrix);
+    output.position = mul(output.position, viewMatrix);
+    output.position = mul(output.position, projectionMatrix);
     
-    //output.viewInv = viewInv;
-	// 픽셀 쉐이더의 텍스처 좌표를 저장한다.
-	output.tex = input.tex;
+	// 픽셀 쉐이더가 사용할 입력 색상을 저장합니다.
+    output.depthPosition = output.position;
     
-	return output;
+    return output;
 }

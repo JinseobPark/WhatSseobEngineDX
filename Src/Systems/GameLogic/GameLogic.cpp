@@ -42,7 +42,7 @@ void GameLogic::Initialize()
 	sphere2->m_transform->setPosition(XMFLOAT3(2, 2, 3));
 
 
-	//Instance Object
+	////Instance Object
 	Object* sphereInstance;
 	sphereInstance = OBJECT_FACTORY->CreateSphereInstance("piter5");
 	{
@@ -84,17 +84,36 @@ void GameLogic::Initialize()
 	light1 = OBJECT_FACTORY->CreateEmptyObject("light1");
 	{
 		DirLight* dirL = new DirLight();
-		dirL->m_diffuse = XMFLOAT4(0.0f, 0.5, 0.5, 1.0f);
+		dirL->m_diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		dirL->m_direction = XMFLOAT3(0.0f, 0.0f, -1.0f);
+		dirL->SetShadow(true);
 		light1->AddComponent(dirL);
+		light1->Initialize();
+	}
 
+	//object lights
+	Object* light11;
+	light11 = OBJECT_FACTORY->CreateEmptyObject("light11");
+	{
 		DirLight* dirL2 = new DirLight();
 		dirL2->m_diffuse = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 		dirL2->m_direction = XMFLOAT3(0.5f, -0.5f, 0.0f);
-		light1->AddComponent(dirL2);
-		light1->Initialize();
+		dirL2->SetShadow(true);
+		light11->AddComponent(dirL2);
+		light11->Initialize();
 	}
-	
+
+	//object lights
+	Object* light12;
+	light12 = OBJECT_FACTORY->CreateEmptyObject("light12");
+	{
+		DirLight* dirL3 = new DirLight();
+		dirL3->m_diffuse = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
+		dirL3->m_direction = XMFLOAT3(0.5f, 0.0f, 0.5f);
+		dirL3->SetShadow(true);
+		light12->AddComponent(dirL3);
+		light12->Initialize();
+	}
 
 	Object* light2;
 	light2 = OBJECT_FACTORY->CreateEmptyObject("light2");

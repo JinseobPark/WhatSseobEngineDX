@@ -143,7 +143,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Systems\GlobalDefines.h" />
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DepthInstanceShaderclass.h" />
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\HorizontalBlurShaderClass.h" />
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DepthShaderClass.h" />
+    <ClInclude Include="Src\Systems\Graphics\ShadowRenderTextures.h" />
     <ClInclude Include="Src\Utils\AlignedAllocationPolicy.h" />
     <ClInclude Include="Src\Component\Camera\Camera.h" />
     <ClInclude Include="Src\Component\Component.h" />
@@ -187,7 +191,7 @@
     <ClInclude Include="Src\Systems\Graphics\OrthoWindowClass.h" />
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ParticleShaderClass.h" />
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.h" />
-    <ClInclude Include="Src\Systems\Graphics\RenderTextureClass.h" />
+    <ClInclude Include="Src\Systems\Graphics\RenderTexture.h" />
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.h" />
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ShadowDirectionalShaderClass.h" />
     <ClInclude Include="Src\Systems\Physics\Physics.h" />
@@ -217,6 +221,9 @@
     <ClCompile Include="Src\Component\Sprite\Texture.cpp" />
     <ClCompile Include="Src\Component\Sprite\TextureManager.cpp" />
     <ClCompile Include="Src\Engine\WhatSseobEngine.cpp" />
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DepthInstanceShaderclass.cpp" />
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DepthShaderClass.cpp" />
+    <ClCompile Include="Src\Systems\Graphics\ShadowRenderTextures.cpp" />
     <ClCompile Include="Src\Utils\Imgui\imgui.cpp" />
     <ClCompile Include="Src\Utils\Imgui\imgui_draw.cpp" />
     <ClCompile Include="Src\Utils\Imgui\imgui_impl_dx11.cpp" />
@@ -243,7 +250,7 @@
     <ClCompile Include="Src\Systems\Graphics\OrthoWindowClass.cpp" />
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ParticleShaderClass.cpp" />
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.cpp" />
-    <ClCompile Include="Src\Systems\Graphics\RenderTextureClass.cpp" />
+    <ClCompile Include="Src\Systems\Graphics\RenderTexture.cpp" />
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.cpp" />
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ShadowDirectionalShaderClass.cpp" />
     <ClCompile Include="Src\Systems\Physics\Physics.cpp" />

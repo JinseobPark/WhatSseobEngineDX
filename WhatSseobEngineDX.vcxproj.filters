@@ -60,7 +60,7 @@
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Systems\Graphics\RenderTextureClass.h">
+    <ClInclude Include="Src\Systems\Graphics\RenderTexture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.h">
@@ -195,6 +195,18 @@
     <ClInclude Include="Src\Systems\Graphics\ShaderClass\HorizontalBlurShaderClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DepthShaderClass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Systems\Graphics\ShadowRenderTextures.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Systems\GlobalDefines.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Systems\Graphics\ShaderClass\DepthInstanceShaderclass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\BumpMapShaderClass.cpp">
@@ -239,7 +251,7 @@
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ProjectionShaderClass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Systems\Graphics\RenderTextureClass.cpp">
+    <ClCompile Include="Src\Systems\Graphics\RenderTexture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\ShaderManagerClass.cpp">
@@ -345,6 +357,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Src\Systems\Graphics\ShaderClass\HorizontalBlurShaderClass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DepthShaderClass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Systems\Graphics\ShadowRenderTextures.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Systems\Graphics\ShaderClass\DepthInstanceShaderclass.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

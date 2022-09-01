@@ -17,6 +17,8 @@ class DeferredShaderClass;
 class TextureInstanceShaderClass;
 class TessellationShaderClass;
 class DeferredMultiLightShaderClass;
+class DepthShaderClass;
+class DepthInstanceShaderClass;
 
 class ShaderManagerClass
 {
@@ -57,7 +59,12 @@ public:
 
 	bool RenderTessellationShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, float);
 
-	bool RenderDeferredMultiLightShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,  ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
+	bool RenderDeferredMultiLightShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,  ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow);
+
+	bool RenderDepthShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX);
+
+	bool RenderDepthInstanceShader(ID3D11DeviceContext*, int, int, XMMATRIX, XMMATRIX, XMMATRIX);
+
 
 	void InitializeLightBuffer(vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot);
 
@@ -76,5 +83,6 @@ private:
 	TextureInstanceShaderClass* m_InstanceTextureShader = nullptr;
 	TessellationShaderClass* m_TessellationShader = nullptr;
 	DeferredMultiLightShaderClass* m_DeferredMultiLightShader = nullptr;
-
+	DepthShaderClass* m_DepthShader = nullptr;
+	DepthInstanceShaderClass* m_DepthInstanceShader = nullptr;
 };

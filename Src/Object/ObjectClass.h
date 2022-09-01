@@ -51,6 +51,7 @@ private:
 
 	Camera* m_camera;
 
+
 	ObjectID m_objectID;
 	std::string p_name;
 };

@@ -6,7 +6,9 @@
 #include "Systems/Application/Application.h"
 #include "Graphics.h"
 #include "ShaderClass/shadermanagerclass.h"
+#include "RenderTexture.h"
 #include "orthowindowclass.h"
+#include "ShadowRenderTextures.h"
 
 #include "DeferredBuffersClass.h"
 #include "Systems/Application/Application.h"
@@ -30,15 +32,19 @@ Graphics::~Graphics()
 
 void Graphics::Initialize()
 {
+	int screenWidth = mAPPLICATION->GetWidth();
+	int screenHeight = mAPPLICATION->GetHeight();
+	// Set down sampling size
+	int downSampleWidth = screenWidth / 2;
+	int downSampleHeight = screenHeight / 2;
+	bool result = true;
+
 	//Create D3D object
 	m_Direct3D = new D3DClass;
 	if (!m_Direct3D)
 	{
 		return ;
 	}
-	int screenWidth = mAPPLICATION->GetWidth();
-	int screenHeight = mAPPLICATION->GetHeight();
-	bool result = true;
 
 	//initialize d3d
 	if (!m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, mAPPLICATION->GetHWND(),
@@ -47,12 +53,6 @@ void Graphics::Initialize()
 		MessageBox(mAPPLICATION->GetHWND(), L"Direct3D 객체생성 오류", L"Error", MB_OK);
 		return;
 	}
-
-	// Set down sampling size
-	int downSampleWidth = screenWidth / 2;
-	int downSampleHeight = screenHeight / 2;
-
-
 
 	// Create Shader Manager
 	m_ShaderManager = new ShaderManagerClass;
@@ -69,18 +69,19 @@ void Graphics::Initialize()
 	}
 
 
-	// Create full ortho window
+	// Create & Initialize full ortho window
 	m_FullScreenWindow = new OrthoWindowClass;
-
-	// Initialize full ortho window
 	m_FullScreenWindow->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight);
 
 
-	// Create deferred buffer
+	// Create & initializedeferred buffer
 	m_DeferredBuffers = new DeferredBuffersClass;
-
-	// Initialize deferred buffer
 	m_DeferredBuffers->Initialize(m_Direct3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
+
+	// Initialize Shadow render texture
+	m_ShadowTexture = new ShadowRenderTextures();
+	m_ShadowTexture->Initialize(m_Direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR);
+
 
 	//Create Imgui data
 	g_data = new GraphicsDatas;
@@ -95,37 +96,40 @@ void Graphics::Initialize()
 void Graphics::Update(float dt)
 {
 	bool result = false;
-	bool isDeferred = g_data->isDeferred;
-	bool isResources = g_data->isResources;
 
 	// Clear Begin Back color
-	m_Direct3D->BeginScene(g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
-	m_Camera[m_CameraNumber]->Render();
 	ImguiUpdate(dt);
 
 	//Here render all
+	MakeShadow();
+	RenderDeferredToTexture();
 
-	//Deferred render
-	if (isDeferred)
+	m_Direct3D->BeginScene(g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
+	m_Camera[m_CameraNumber]->Render();
+
+	
+	switch (m_renderlist)
 	{
-		//render
-		RenderDeferredToTexture();
-		//m_Direct3D->TurnOffAlphaBlending();
-
-		// Show Deferred buffer resources
-		if (isResources)
+		case RenderList::NORMAL:
 		{
-			RenderTexture();
+			RenderNormal();
+			break;
 		}
-		else
+		case RenderList::DEFERRED:
 		{
-			//light to deferred shader
 			RenderDeferred();
+			break;
 		}
-	}
-	//Todo : show forward render
-	else {
-		RenderNormal();
+		case RenderList::RESOURCES:
+		{
+			RenderResources();
+			break;
+		}
+		case RenderList::SHADOWS:
+		{
+			RenderShadows();
+			break;
+		}
 	}
 
 	//Imgui Render
@@ -143,6 +147,13 @@ void Graphics::Shutdown()
 	ImguiShutdown();
 
 	//Release buffer / objects
+	if (m_ShadowTexture)
+	{
+		m_ShadowTexture->Shutdown();
+		delete m_ShadowTexture;
+		m_ShadowTexture = 0;
+	}
+
 	if (m_DeferredBuffers)
 	{
 		m_DeferredBuffers->Shutdown();
@@ -178,139 +189,286 @@ D3DClass* Graphics::GetD3DClass()
 	return m_Direct3D;
 }
 
-void Graphics::RenderTessellation()
+void Graphics::RenderTessellation(RenderType render)
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, translateMatrix;
-	XMFLOAT3 cameraPosition, modelPosition;
-
-	//m_Camera->Render();
-
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera[0]->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-
-	cameraPosition = m_Camera[m_CameraNumber]->GetPosition();
-
-	for (auto modelT : m_modelTessellations)
+	switch (render)
 	{
-
-		//Model Load
-		modelT->Render(m_Direct3D->GetDeviceContext());
-
-		//draw to deferred buffer
-		if (!m_ShaderManager->RenderTessellationShader(m_Direct3D->GetDeviceContext(), modelT->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-			g_data->tessellationAmount))
+		case RenderType::SHADOW:
 		{
-			return;
+
 		}
+			break;
+		case RenderType::DEFERRED :
+		{
+			XMMATRIX worldMatrix, viewMatrix, projectionMatrix, translateMatrix;
+			XMFLOAT3 cameraPosition, modelPosition;
+
+			//m_Camera->Render();
+
+			m_Direct3D->GetWorldMatrix(worldMatrix);
+			m_Camera[0]->GetViewMatrix(viewMatrix);
+			m_Direct3D->GetProjectionMatrix(projectionMatrix);
+
+			cameraPosition = m_Camera[m_CameraNumber]->GetPosition();
+
+			for (auto modelT : m_modelTessellations)
+			{
+
+				//Model Load
+				modelT->Render(m_Direct3D->GetDeviceContext());
+
+				//draw to deferred buffer
+				if (!m_ShaderManager->RenderTessellationShader(m_Direct3D->GetDeviceContext(), modelT->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+					g_data->tessellationAmount))
+				{
+					return;
+				}
+			}
+		}
+			break;
+		case RenderType::FORWARD:
+		{
+
+		}
+			break;
+		default: break;
+		
 	}
+
+
 }
 
-void Graphics::RenderBillboard()
+void Graphics::RenderBillboard(RenderType render)
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, translateMatrix;
-	XMFLOAT3 cameraPosition, modelPosition;
-
-
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-
-	cameraPosition = m_Camera[m_CameraNumber]->GetPosition();
-
-	for (auto modelB : m_modelBillboards)
+	switch (render)
 	{
-		modelPosition = modelB->m_transform->getPosition();
-		double angle = atan2(modelPosition.x - cameraPosition.x, modelPosition.z - cameraPosition.z) * (180.0 / XM_PI);
+	case RenderType::SHADOW:
+	{
 
-		float rotation = (float)angle * 0.0174532925f;
-
-		worldMatrix = XMMatrixRotationY(rotation);
-
-		// translation
-		translateMatrix = XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
-		worldMatrix = XMMatrixMultiply(worldMatrix, translateMatrix);
-
-		//Model Load
-		modelB->Render(m_Direct3D->GetDeviceContext());
-
-		//draw to deferred buffer
-		m_ShaderManager->RenderDeferredShader(m_Direct3D->GetDeviceContext(), modelB->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-			modelB->GetTexture(DEFAULT));
 	}
+	break;
+	case RenderType::DEFERRED:
+	{
+		XMMATRIX worldMatrix, viewMatrix, projectionMatrix, translateMatrix;
+		XMFLOAT3 cameraPosition, modelPosition;
 
+
+		m_Direct3D->GetWorldMatrix(worldMatrix);
+		m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
+		m_Direct3D->GetProjectionMatrix(projectionMatrix);
+
+		cameraPosition = m_Camera[m_CameraNumber]->GetPosition();
+
+		for (auto modelB : m_modelBillboards)
+		{
+			modelPosition = modelB->m_transform->getPosition();
+			double angle = atan2(modelPosition.x - cameraPosition.x, modelPosition.z - cameraPosition.z) * (180.0 / XM_PI);
+
+			float rotation = (float)angle * 0.0174532925f;
+
+			worldMatrix = XMMatrixRotationY(rotation);
+
+			// translation
+			translateMatrix = XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, translateMatrix);
+
+			//Model Load
+			modelB->Render(m_Direct3D->GetDeviceContext());
+
+			//draw to deferred buffer
+			m_ShaderManager->RenderDeferredShader(m_Direct3D->GetDeviceContext(), modelB->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+				modelB->GetTexture(DEFAULT));
+		}
+	}
+	break;
+	case RenderType::FORWARD:
+	{
+
+	}
+	break;
+	default: break;
+
+	}
 	
 }
 
-void Graphics::RenderModels()
+void Graphics::RenderModels(RenderType render)
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX multiply;
-
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-
-	for (auto& model : m_models)
+	switch (render)
 	{
+	case RenderType::SHADOW:
+	{
+		XMMATRIX worldMatrix, lightViewMatrix, lightOrthoMatrix, viewMatrix, projectionMatrix;
+		XMMATRIX multiply;
+
 		m_Direct3D->GetWorldMatrix(worldMatrix);
-		XMFLOAT3 trans;
-		trans = model->m_transform->getScale();
-		multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+		//m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
+		//m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
-		trans = model->m_transform->getRotation();
-		
-		multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+		m_dirLights[m_shadowNum]->GenerateViewMatrix();
+		m_dirLights[m_shadowNum]->GetViewMatrix(lightViewMatrix);
+		m_dirLights[m_shadowNum]->GetOrthoMatrix(lightOrthoMatrix);
 
-		trans = model->m_transform->getPosition();
-		multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
-
-		//Model Load
-		model->Render(m_Direct3D->GetDeviceContext());
-		//draw to deferred buffer
-		if (!m_ShaderManager->RenderDeferredShader(m_Direct3D->GetDeviceContext(), model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, model->GetTexture(DEFAULT)))
+		for (auto& model : m_models)
 		{
-			return;
+			m_Direct3D->GetWorldMatrix(worldMatrix);
+			XMFLOAT3 trans;
+			trans = model->m_transform->getScale();
+			multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = model->m_transform->getRotation();
+
+			multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = model->m_transform->getPosition();
+			multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			//Model Load
+			model->Render(m_Direct3D->GetDeviceContext());
+			//draw to deferred buffer
+			if (!m_ShaderManager->RenderDepthShader(m_Direct3D->GetDeviceContext(), model->GetIndexCount(), worldMatrix, lightViewMatrix, lightOrthoMatrix))
+			{
+				return;
+			}
 		}
+	}
+	break;
+	case RenderType::DEFERRED:
+	{
+		XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+		XMMATRIX multiply;
+
+		m_Direct3D->GetWorldMatrix(worldMatrix);
+		m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
+		m_Direct3D->GetProjectionMatrix(projectionMatrix);
+
+		for (auto& model : m_models)
+		{
+			m_Direct3D->GetWorldMatrix(worldMatrix);
+			XMFLOAT3 trans;
+			trans = model->m_transform->getScale();
+			multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = model->m_transform->getRotation();
+
+			multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = model->m_transform->getPosition();
+			multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			//Model Load
+			model->Render(m_Direct3D->GetDeviceContext());
+			//draw to deferred buffer
+			if (!m_ShaderManager->RenderDeferredShader(m_Direct3D->GetDeviceContext(), model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, model->GetTexture(DEFAULT)))
+			{
+				return;
+			}
+		}
+	}
+	break;
+	case RenderType::FORWARD:
+	{
+
+	}
+	break;
+	default: break;
+
 	}
 }
 
-void Graphics::RenderModelInstances()
+void Graphics::RenderModelInstances(RenderType render)
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX multiply;
-
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-
-	for (auto& modelinst : m_modelInstances)
+	switch (render)
 	{
+	case RenderType::SHADOW:
+	{
+		XMMATRIX worldMatrix, lightViewMatrix, lightOrthoMatrix, viewMatrix, projectionMatrix;
+		XMMATRIX multiply;
+
 		m_Direct3D->GetWorldMatrix(worldMatrix);
-		XMFLOAT3 trans;
-		trans = modelinst->m_transform->getScale();
-		multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+		//m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
+		//m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
-		trans = modelinst->m_transform->getRotation();
+		m_dirLights[m_shadowNum]->GenerateViewMatrix();
+		m_dirLights[m_shadowNum]->GetViewMatrix(lightViewMatrix);
+		m_dirLights[m_shadowNum]->GetOrthoMatrix(lightOrthoMatrix);
 
-		multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
-
-		trans = modelinst->m_transform->getPosition();
-		multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
-		worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
-
-		//Model Load
-		modelinst->Render(m_Direct3D->GetDeviceContext());
-		//draw to deferred buffer
-		if (!m_ShaderManager->RenderTextureInstanceShader(m_Direct3D->GetDeviceContext(), modelinst->GetIndexCount(), modelinst->GetInstanceCount(), worldMatrix, viewMatrix, projectionMatrix, modelinst->GetTexture(DEFAULT)))
+		for (auto& modelinst : m_modelInstances)
 		{
-			return;
+			m_Direct3D->GetWorldMatrix(worldMatrix);
+			XMFLOAT3 trans;
+			trans = modelinst->m_transform->getScale();
+			multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = modelinst->m_transform->getRotation();
+
+			multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = modelinst->m_transform->getPosition();
+			multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			//Model Load
+			modelinst->Render(m_Direct3D->GetDeviceContext());
+			//draw to deferred buffer
+			if (!m_ShaderManager->RenderDepthInstanceShader(m_Direct3D->GetDeviceContext(), modelinst->GetIndexCount(), modelinst->GetInstanceCount(), worldMatrix, lightViewMatrix, lightOrthoMatrix))
+			{
+				return;
+			}
 		}
+	}
+	break;
+	case RenderType::DEFERRED:
+	{
+		XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+		XMMATRIX multiply;
+
+		m_Direct3D->GetWorldMatrix(worldMatrix);
+		m_Camera[m_CameraNumber]->GetViewMatrix(viewMatrix);
+		m_Direct3D->GetProjectionMatrix(projectionMatrix);
+
+		for (auto& modelinst : m_modelInstances)
+		{
+			m_Direct3D->GetWorldMatrix(worldMatrix);
+			XMFLOAT3 trans;
+			trans = modelinst->m_transform->getScale();
+			multiply = XMMatrixScaling(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = modelinst->m_transform->getRotation();
+
+			multiply = XMMatrixRotationRollPitchYaw(XMConvertToRadians(trans.x), XMConvertToRadians(trans.y), XMConvertToRadians(trans.z));
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			trans = modelinst->m_transform->getPosition();
+			multiply = XMMatrixTranslation(trans.x, trans.y, trans.z);
+			worldMatrix = XMMatrixMultiply(worldMatrix, multiply);
+
+			//Model Load
+			modelinst->Render(m_Direct3D->GetDeviceContext());
+			//draw to deferred buffer
+			if (!m_ShaderManager->RenderTextureInstanceShader(m_Direct3D->GetDeviceContext(), modelinst->GetIndexCount(), modelinst->GetInstanceCount(), worldMatrix, viewMatrix, projectionMatrix, modelinst->GetTexture(DEFAULT)))
+			{
+				return;
+			}
+		}
+	}
+	break;
+	case RenderType::FORWARD:
+	{
+
+	}
+	break;
+	default: break;
+
 	}
 }
 
@@ -320,16 +478,17 @@ void Graphics::RenderDeferredToTexture()
 	m_DeferredBuffers->SetRenderTargets(m_Direct3D->GetDeviceContext());
 
 	// Clear render buffer
-	m_DeferredBuffers->ClearRenderTargets(m_Direct3D->GetDeviceContext(), g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
+	m_DeferredBuffers->ClearRenderTargets(m_Direct3D->GetDeviceContext(), 0, 0, 0, 1.0f);
+	//m_DeferredBuffers->ClearRenderTargets(m_Direct3D->GetDeviceContext(), g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
 
 	//Render something
-	RenderTessellation();
+	RenderTessellation(RenderType::DEFERRED);
 
-	RenderBillboard();
+	RenderBillboard(RenderType::DEFERRED);
 
-	RenderModelInstances();
+	RenderModelInstances(RenderType::DEFERRED);
 	
-	RenderModels();
+	RenderModels(RenderType::DEFERRED);
 
 
 	// Reset render target back
@@ -343,6 +502,7 @@ void Graphics::RenderDeferredToTexture()
 void Graphics::RenderDeferred()
 {
 	XMMATRIX worldMatrix, baseViewMatrix, viewMatrix, orthoMatrix, projectionMatrix;
+
 
 	//m_Direct3D->BeginScene(g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
 	
@@ -361,7 +521,7 @@ void Graphics::RenderDeferred()
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
 	m_ShaderManager->RenderDeferredMultiLightShader(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
-		m_DeferredBuffers->GetShaderResourceView(0), m_DeferredBuffers->GetShaderResourceView(1), m_DeferredBuffers->GetShaderResourceView(2), m_DeferredBuffers->GetShaderResourceView(3), m_dirLights, m_pointLights, m_spotLights);
+		m_DeferredBuffers->GetShaderResourceView(0), m_DeferredBuffers->GetShaderResourceView(1), m_DeferredBuffers->GetShaderResourceView(2), m_DeferredBuffers->GetShaderResourceView(3), m_dirLights, m_pointLights, m_spotLights, m_ShadowTexture->GetShaderResourceView());
 
 	// Turn Zbuffer back
 	m_Direct3D->TurnZBufferOn();
@@ -369,7 +529,7 @@ void Graphics::RenderDeferred()
 	
 }
 
-void Graphics::RenderTexture()
+void Graphics::RenderResources()
 {
 	XMMATRIX worldMatrix, baseViewMatrix, viewMatrix, orthoMatrix, projectionMatrix;
 
@@ -420,17 +580,85 @@ void Graphics::RenderTexture()
 
 }
 
+void Graphics::RenderShadows()
+{
+	XMMATRIX worldMatrix, baseViewMatrix, viewMatrix, orthoMatrix, projectionMatrix;
+
+	// Get Matrices
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera[m_CameraNumber]->GetBaseViewMatrix(baseViewMatrix);
+	m_Direct3D->GetOrthoMatrix(orthoMatrix);
+
+	// Turn off Zbuffer to begin 2D rendering
+	m_Direct3D->TurnZBufferOff();
+
+	// Put the full screen ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
+	int picknum = min(g_data->resourceShadow, MAX_DIRLIGHTS) - 1;
+
+	if (!m_ShaderManager->RenderTextureShader(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
+		m_ShadowTexture->GetShaderResourceView(picknum))) return;
+
+	// Turn Zbuffer back
+	m_Direct3D->TurnZBufferOn();
+}
+
 //TODO : Forward Render
 void Graphics::RenderNormal()
 {
-	RenderTessellation();
+	RenderTessellation(RenderType::FORWARD);
 
-	RenderBillboard();
+	RenderBillboard(RenderType::FORWARD);
 
-	RenderModelInstances();
+	RenderModelInstances(RenderType::FORWARD);
 
-	RenderModels();
+	RenderModels(RenderType::FORWARD);
 }
+
+
+// Shadow depth
+void Graphics::MakeShadow()
+{
+	m_shadowNum = 0;
+	//for (auto shadowTexture : m_ShadowTextures)
+	//{
+	//	shadowTexture.first->SetRenderTarget(m_Direct3D->GetDeviceContext());
+
+	//	shadowTexture.first->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+	//	//RenderTessellation(RenderType::SHADOW);
+
+	//	//RenderBillboard(RenderType::SHADOW);
+
+	//	RenderModelInstances(RenderType::SHADOW);
+
+	//	RenderModels(RenderType::SHADOW);
+
+
+	//	m_Direct3D->SetBackBufferRenderTarget();
+	//	m_Direct3D->ResetViewport();
+	//	m_shadowNum++;
+	//}
+
+	for (int i = 0; i < m_dirLights.size(); i++)
+	{
+		m_ShadowTexture->SetRenderTarget(m_Direct3D->GetDeviceContext(), i);
+
+		m_ShadowTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f, i);
+		//RenderTessellation(RenderType::SHADOW);
+
+		//RenderBillboard(RenderType::SHADOW);
+
+		RenderModels(RenderType::SHADOW);
+
+		RenderModelInstances(RenderType::SHADOW);
+
+
+		m_Direct3D->SetBackBufferRenderTarget();
+		m_Direct3D->ResetViewport();
+		m_shadowNum++;
+	}
+}
+
 
 
 //Initialize IMGUI
@@ -538,8 +766,10 @@ void Graphics::ImguiUpdate(float dt)
 	ImGui::Begin("Hello, world!");
 	ImGui::Text("Hello Whatsseob.");               // Test text
 	ImGui::Checkbox("Deferred", &g_data->isDeferred);      // bool box. Decide deferred or forward
-	ImGui::Checkbox("resource", &g_data->isResources);      // bool box. Decide render deferred  or render deferred resource.
-	ImGui::SliderInt("resourceNumber", &g_data->resourceN, 1, 4);      // pick int. Decide resourece number
+	ImGui::SliderInt("RenderList", &g_data->renderlist, 0, 3);      // pick int. Decide render type
+	m_renderlist = (RenderList)g_data->renderlist;
+	ImGui::SliderInt("resourceNumber", &g_data->resourceN, 1, 5);      // pick int. Decide resourece number
+	ImGui::SliderInt("resourceShadowNumber", &g_data->resourceShadow, 1, MAX_DIRLIGHTS);      // pick int. Decide resourece number
 	ImGui::SliderInt("Camera Number", &g_data->CameraNumber, 1, m_Camera.size());      // pick int. Pick Camera number. 
 	m_CameraNumber = g_data->CameraNumber;
 	ImGui::SliderFloat("Tessellation Amount", &g_data->tessellationAmount, 1.0f, 10.0f);            // float slider. set tessellation amount

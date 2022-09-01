@@ -32,10 +32,10 @@ void DeferredMultiLightShaderClass::Shutdown()
 
 bool DeferredMultiLightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture, 
-	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow)
 {
 	// Set shader parameters
-	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot))
+	if (!SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot, shadow))
 	{
 		return false;
 	}
@@ -303,9 +303,9 @@ bool DeferredMultiLightShaderClass::InitializeShader(ID3D11Device* device, HWND 
 	// Create a texture sampler state description
 	D3D11_SAMPLER_DESC samplerDesc;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.MipLODBias = 0.0f;
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -317,7 +317,35 @@ bool DeferredMultiLightShaderClass::InitializeShader(ID3D11Device* device, HWND 
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state
-	result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleStateWrap);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	// 텍스처 샘플러 상태를 만듭니다.
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleStateClamp);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 16;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// 텍스처 샘플러 상태를 만듭니다.
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleStateShadow);
 	if (FAILED(result))
 	{
 		return false;
@@ -383,10 +411,16 @@ void DeferredMultiLightShaderClass::ShutdownShader()
 		m_matrixBuffer = 0;
 	}
 
-	if (m_sampleState)
+	if (m_sampleStateWrap)
 	{
-		m_sampleState->Release();
-		m_sampleState = 0;
+		m_sampleStateWrap->Release();
+		m_sampleStateWrap = 0;
+	}
+
+	if (m_sampleStateClamp)
+	{
+		m_sampleStateClamp->Release();
+		m_sampleStateClamp = 0;
 	}
 
 	if (m_layout)
@@ -424,7 +458,7 @@ void DeferredMultiLightShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMe
 
 bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture, 
-	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+	vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow)
 {
 	// Transpose the matrices for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -446,6 +480,11 @@ bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* dev
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
+	//XMMATRIX lightVPinv;
+	//XMFLOAT3 cameraPos;
+	//float padding1;
+	//XMMATRIX viewinv;
+	// 
 	// Unlock the matrix constant buffer
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
@@ -460,6 +499,9 @@ bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* dev
 	deviceContext->PSSetShaderResources(1, 1, &colorTexture);
 	deviceContext->PSSetShaderResources(2, 1, &normalTexture);
 	deviceContext->PSSetShaderResources(3, 1, &depthTexture);
+
+	deviceContext->PSSetShaderResources(4, 3, shadow);
+
 
 	// Lock the light constant buffer
 	if (FAILED(deviceContext->Map(m_lightCountBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
@@ -500,10 +542,12 @@ bool DeferredMultiLightShaderClass::SetShaderParameters(ID3D11DeviceContext* dev
 
 		for (int i = 0; i < m_dirLightCount; ++i)
 		{
+			XMMATRIX VPmatirxinv = XMMatrixTranspose(dir.at(i)->GetVPMatrix(false));
 			dataPtr3[i].m_position = dir.at(i)->m_position;
 			dataPtr3[i].m_direction = dir.at(i)->m_direction;
 			dataPtr3[i].m_ambient = dir.at(i)->m_ambient;
 			dataPtr3[i].m_diffuse = dir.at(i)->m_diffuse;
+			dataPtr3[i].m_lightVP = VPmatirxinv;
 		}
 		deviceContext->Unmap(m_dirlightBuffer, 0);
 
@@ -583,7 +627,10 @@ void DeferredMultiLightShaderClass::RenderShader(ID3D11DeviceContext* deviceCont
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+	//deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+	deviceContext->PSSetSamplers(0, 1, &m_sampleStateClamp);
+	deviceContext->PSSetSamplers(1, 1, &m_sampleStateWrap);
+	deviceContext->PSSetSamplers(2, 1, &m_sampleStateShadow);
 
 	// Render the triangles
 	deviceContext->DrawIndexed(indexCount, 0, 0);

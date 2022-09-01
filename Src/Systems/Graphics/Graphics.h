@@ -1,22 +1,12 @@
 #pragma once
 #include "Systems/System.h"
 #include "Component/ComponentHeaders.h"
+#include "Systems/GlobalDefines.h"
 #include <vector>
 #include <array>
 
 using namespace std;
 
-/////////////
-// GLOBALS //
-/////////////
-const bool FULL_SCREEN = false;
-const bool VSYNC_ENABLED = true;
-const float SCREEN_DEPTH = 100.0f;
-const float SCREEN_NEAR = 1.0f;
-const int SHADOWMAP_WIDTH = 1024;
-const int SHADOWMAP_HEIGHT = 1024;
-const float SHADOWMAP_DEPTH = 50.0f;
-const float SHADOWMAP_NEAR = 1.0f;
 
 
 class D3DClass;
@@ -25,7 +15,8 @@ class ShaderManagerClass;
 class TextureShaderClass;
 class OrthoWindowClass;
 class DeferredBuffersClass;
-
+class RenderTexture;
+class ShadowRenderTextures;
 
 class Model;
 class ModelInstance;
@@ -37,13 +28,22 @@ class DirLight;
 
 class Camera;
 
+enum class RenderList
+{
+	NORMAL = 0,
+	DEFERRED,
+	RESOURCES,
+	SHADOWS
+};
+
 struct GraphicsDatas
 {
 	float f = 0.0f;
 	int counter = 0;
 	float clear_color[3] = { 0.45f, 0.55f, 0.60f };
-	bool isResources = false;
+	int renderlist = 1;
 	int resourceN = 1;
+	int resourceShadow = 1;
 	bool show_another_window = true;
 	float cubePosition[30][3] = { 0.0f, 0.0f, 0.0f };
 	float cubeRotation[30][3] = { 0.0f, 0.0f, 0.0f };
@@ -52,15 +52,22 @@ struct GraphicsDatas
 	float tessellationAmount = 3.0f;
 	bool isDeferred = true;
 
-	float DirLightDirection[3][3] = { 0.0f, 0.0f, 0.0f };
-	float PointLightPosition[30][3] = { 0.0f, 0.0f, 0.0f };
-	float SpotLightPosition[30][3] = { 0.0f, 0.0f, 0.0f };
-	float SpotLightDirection[30][3] = { 0.0f, 0.0f, 0.0f };
+	float DirLightDirection[MAX_DIRLIGHTS][3] = { 0.0f, 0.0f, 0.0f };
+	float PointLightPosition[MAX_POINTLIGHTS][3] = { 0.0f, 0.0f, 0.0f };
+	float SpotLightPosition[MAX_SPOTLIGHTS][3] = { 0.0f, 0.0f, 0.0f };
+	float SpotLightDirection[MAX_SPOTLIGHTS][3] = { 0.0f, 0.0f, 0.0f };
 
 	int CameraNumber = 0;
 
 };
 
+enum class RenderType
+{
+	NONE = 0,
+	SHADOW,
+	DEFERRED,
+	FORWARD
+};
 
 
 class Graphics : public System
@@ -76,16 +83,25 @@ public:
 	void InitializeLightInfo();
 	D3DClass* GetD3DClass();
 private:
-	//Render
-	void RenderTessellation();
-	void RenderBillboard();
-	void RenderModels();
-	void RenderModelInstances();
+
+	//Shadow
+	void MakeShadow();
+
+	//Deferred
+	void RenderTessellation(RenderType render);
+	void RenderBillboard(RenderType render);
+	void RenderModels(RenderType render);
+	void RenderModelInstances(RenderType render);
+
+	//Render List
 	void RenderDeferredToTexture();
 	void RenderDeferred();
-	void RenderTexture();
+	void RenderResources();
+	void RenderShadows();
 
+	//forward
 	void RenderNormal();
+
 
 
 	//Imgui
@@ -106,14 +122,18 @@ public:
 	std::vector<SpotLight*> m_spotLights;
 
 	std::vector<Camera*> m_Camera;
-
 	unsigned int m_CameraNumber;
 
 private:
 	ShaderManagerClass* m_ShaderManager = nullptr;
 	OrthoWindowClass* m_FullScreenWindow = nullptr;
 	DeferredBuffersClass* m_DeferredBuffers = nullptr;
+	ShadowRenderTextures* m_ShadowTexture = nullptr;
+
+	//std::vector<pair<RenderTexture*, DirLight*>> m_ShadowTextures;
+	RenderList m_renderlist = RenderList::DEFERRED;
 
 	GraphicsDatas* g_data = nullptr;
+	unsigned int m_shadowNum;
 };
 extern Graphics* mGRAPHICS;

@@ -6,7 +6,7 @@
 DirLight::DirLight() : Component(CT_DIR_LIGHT)
 {
 	//Initialize component
-	m_position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_position = XMFLOAT3(0.0f, 2.0f, -10.0f);
 	m_direction = XMFLOAT3(0.0f, 1.0f, 1.0f);
 	m_diffuse = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 	m_ambient = XMFLOAT4(0.03f, 0.03f, 0.03f, 1.0f);
@@ -23,6 +23,13 @@ DirLight::~DirLight()
 
 void DirLight::Initialize()
 {
+	if (isMakeShadow)
+	{
+		GenerateOrthoMatrix(20.0f, SHADOWMAP_DEPTH * 2.0f, SHADOWMAP_NEAR);
+		GenerateProjectionMatrix(SCREEN_DEPTH, SCREEN_NEAR);
+		//mGRAPHICS->AddShadowResources(this);
+	}
+
 
 }
 
@@ -33,8 +40,12 @@ void DirLight::GenerateViewMatrix()
 	XMFLOAT3 up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 
 	XMVECTOR upVector = XMLoadFloat3(&up);
-	XMVECTOR positionVector = XMLoadFloat3(&m_position);
-	XMVECTOR lookAtVector = XMLoadFloat3(&m_direction);
+	//XMVECTOR lookat = XMVectorAdd(XMLoadFloat3(&m_position), XMLoadFloat3(&m_direction));
+	XMVECTOR lookat = XMLoadFloat3( &m_direction);
+	//XMVECTOR positionVector = XMLoadFloat3(&m_position);
+	XMVECTOR positionVector = XMVector3Normalize(-lookat) * SHADOWMAP_DEPTH;
+	//XMVECTOR lookAtVector = XMLoadFloat3(&m_lookAt);
+	XMVECTOR lookAtVector = -positionVector;
 
 	//Make view matrix
 	m_viewMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
@@ -78,4 +89,16 @@ void DirLight::GenerateOrthoMatrix(float width, float height, float screenDepth,
 void DirLight::GetOrthoMatrix(XMMATRIX& orthoMatrix)
 {
 	orthoMatrix = m_orthoMatrix;
+}
+
+void DirLight::SetShadow(bool shadow)
+{
+	isMakeShadow = shadow;
+}
+
+XMMATRIX DirLight::GetVPMatrix(bool isProjection)
+{
+	XMMATRIX result;
+	result = isProjection ? m_viewMatrix * m_projectionMatrix : m_viewMatrix * m_orthoMatrix;
+	return result;
 }

@@ -15,6 +15,8 @@
 #include "TextureInstanceShaderClass.h"
 #include "TessellationShaderClass.h"
 #include "DeferredMultiLightShaderClass.h"
+#include "DepthShaderClass.h"
+#include "DepthInstanceShaderClass.h"
 
 
 
@@ -34,6 +36,7 @@ ShaderManagerClass::ShaderManagerClass()
 	m_InstanceTextureShader = 0;
 	m_TessellationShader = 0;
 	m_DeferredMultiLightShader = 0;
+	m_DepthShader = 0;
 }
 
 
@@ -219,6 +222,29 @@ bool ShaderManagerClass::Initialize(ID3D11Device* device, HWND hwnd)
 		return false;
 	}
 
+	// Depth shader
+	m_DepthShader = new DepthShaderClass;
+	if (!m_DepthShader)
+	{
+		return false;
+	}
+	if (!m_DepthShader->Initialize(device, hwnd))
+	{
+		MessageBox(hwnd, L"Could not initialize the Depth shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_DepthInstanceShader = new DepthInstanceShaderClass;
+	if (!m_DepthInstanceShader)
+	{
+		return false;
+	}
+	if (!m_DepthInstanceShader->Initialize(device, hwnd))
+	{
+		MessageBox(hwnd, L"Could not initialize the Depth shader object.", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
@@ -226,6 +252,20 @@ bool ShaderManagerClass::Initialize(ID3D11Device* device, HWND hwnd)
 void ShaderManagerClass::Shutdown()
 {
 	// deallocate All Shader
+	if (m_DepthInstanceShader)
+	{
+		m_DepthInstanceShader->Shutdown();
+		delete m_DepthInstanceShader;
+		m_DepthInstanceShader = 0;
+	}
+
+	if (m_DepthShader)
+	{
+		m_DepthShader->Shutdown();
+		delete m_DepthShader;
+		m_DepthShader = 0;
+	}
+
 	if (m_DeferredMultiLightShader)
 	{
 		m_DeferredMultiLightShader->Shutdown();
@@ -413,9 +453,19 @@ bool ShaderManagerClass::RenderTessellationShader(ID3D11DeviceContext* deviceCon
 
 bool ShaderManagerClass::RenderDeferredMultiLightShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* posTexture, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* depthTexture,
-			vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot)
+			vector<DirLight*>& dir, vector<PointLight*>& point, vector<SpotLight*>& spot, ID3D11ShaderResourceView** shadow)
 {
-	return m_DeferredMultiLightShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot);
+	return m_DeferredMultiLightShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, posTexture, colorTexture, normalTexture, depthTexture, dir, point, spot, shadow);
+}
+
+bool ShaderManagerClass::RenderDepthShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+{
+	return m_DepthShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix);
+}
+
+bool ShaderManagerClass::RenderDepthInstanceShader(ID3D11DeviceContext* deviceContext, int indexCount, int instanceCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+{
+	return m_DepthInstanceShader->Render(deviceContext, indexCount, instanceCount, worldMatrix, viewMatrix, projectionMatrix);
 }
 
 // Initialize Light Buffer. This active in initialize step

@@ -30,6 +30,10 @@ public:
 	void GenerateOrthoMatrix(float, float, float, float);
 	void GetOrthoMatrix(XMMATRIX&);
 
+	void SetShadow(bool);
+
+	XMMATRIX GetVPMatrix(bool isProjection);
+
 private:
 
 	//For Shadow/Depth
@@ -37,5 +41,6 @@ private:
 	XMMATRIX m_projectionMatrix;
 	XMMATRIX m_orthoMatrix;
 
+	XMFLOAT3 m_lookAt = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	bool isMakeShadow = false;
 };
