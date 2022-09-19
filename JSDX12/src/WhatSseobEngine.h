@@ -105,6 +105,7 @@ private:
 
 	//UINT mInstanceCount = 0;
 	//bool mFrustumCullingEnabled = true;
+	UINT mSkyTexHeapIndex = 0;
 
 	PassConstants mMainPassCB;
 	PassConstants mReflectedPassCB;

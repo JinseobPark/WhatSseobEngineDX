@@ -31,7 +31,8 @@ struct MaterialData
 };
 
 
-Texture2D gDiffuseMap[9] : register(t0);
+TextureCube gCubeMap : register(t0);
+Texture2D gDiffuseMap[10] : register(t1);
 //Texture2DArray gTreeMapArray : register(t0);
 
 StructuredBuffer<MaterialData> gMaterialData : register(t0, space1);

@@ -149,6 +149,7 @@ enum class RenderLayer : int
 	Reflected,
 	Shadow,
 	Highlight,
+	Sky,
 	Count
 };
 
