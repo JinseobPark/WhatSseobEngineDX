@@ -16,75 +16,76 @@
 #endif
 
 // Include structures and functions for lighting.
-#include "LightingUtil.hlsl"
+#include "Common.hlsl"
+//#include "LightingUtil.hlsl"
 
-struct MaterialData
-{
-    float4 DiffuseAlbedo;
-    float3 FresnelR0;
-    float Roughness;
-    float4x4 MatTransform;
-    uint DiffuseMapIndex;
-    uint MatPad0;
-    uint MatPad1;
-    uint MatPad2;
-};
+//struct MaterialData
+//{
+//    float4 DiffuseAlbedo;
+//    float3 FresnelR0;
+//    float Roughness;
+//    float4x4 MatTransform;
+//    uint DiffuseMapIndex;
+//    uint MatPad0;
+//    uint MatPad1;
+//    uint MatPad2;
+//};
 
 
-TextureCube gCubeMap : register(t0);
-Texture2D gDiffuseMap[10] : register(t1);
-//Texture2DArray gTreeMapArray : register(t0);
+//TextureCube gCubeMap : register(t0);
+//Texture2D gDiffuseMap[10] : register(t1);
+////Texture2DArray gTreeMapArray : register(t0);
 
-StructuredBuffer<MaterialData> gMaterialData : register(t0, space1);
+//StructuredBuffer<MaterialData> gMaterialData : register(t0, space1);
 
-SamplerState gsamPointWrap : register(s0);
-SamplerState gsamPointClamp : register(s1);
-SamplerState gsamLinearWrap : register(s2);
-SamplerState gsamLinearClamp : register(s3);
-SamplerState gsamAnisotropicWrap : register(s4);
-SamplerState gsamAnisotropicClamp : register(s5);
+//SamplerState gsamPointWrap : register(s0);
+//SamplerState gsamPointClamp : register(s1);
+//SamplerState gsamLinearWrap : register(s2);
+//SamplerState gsamLinearClamp : register(s3);
+//SamplerState gsamAnisotropicWrap : register(s4);
+//SamplerState gsamAnisotropicClamp : register(s5);
 
-// Constant data that varies per frame.
-cbuffer cbPerObject : register(b0)
-{
-    float4x4 gWorld;
-    float4x4 gTexTransform;
-    uint gMaterialIndex;
-    uint gObjPad0;
-    uint gObjPad1;
-    uint gObjPad2;
-};
+//// Constant data that varies per frame.
+//cbuffer cbPerObject : register(b0)
+//{
+//    float4x4 gWorld;
+//    float4x4 gTexTransform;
+//    uint gMaterialIndex;
+//    uint gObjPad0;
+//    uint gObjPad1;
+//    uint gObjPad2;
+//};
 
-// Constant data that varies per material.
-cbuffer cbPass : register(b1)
-{
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3 gEyePosW;
-    float cbPerObjectPad1;
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
-    float4 gAmbientLight;
+//// Constant data that varies per material.
+//cbuffer cbPass : register(b1)
+//{
+//    float4x4 gView;
+//    float4x4 gInvView;
+//    float4x4 gProj;
+//    float4x4 gInvProj;
+//    float4x4 gViewProj;
+//    float4x4 gInvViewProj;
+//    float3 gEyePosW;
+//    float cbPerObjectPad1;
+//    float2 gRenderTargetSize;
+//    float2 gInvRenderTargetSize;
+//    float gNearZ;
+//    float gFarZ;
+//    float gTotalTime;
+//    float gDeltaTime;
+//    float4 gAmbientLight;
 
-    float4 gFogColor;
-    float gFogStart;
-    float gFogRange;
-    float2 cbPerObjectPad2;
+//    float4 gFogColor;
+//    float gFogStart;
+//    float gFogRange;
+//    float2 cbPerObjectPad2;
 
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
-    Light gLights[MaxLights];
-};
+//    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
+//    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
+//    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
+//    // are spot lights for a maximum of MaxLights per object.
+//    Light gLights[MaxLights];
+//};
 
  
 struct VertexIn
@@ -187,7 +188,7 @@ float4 PS(GeoOut pin) : SV_Target
     float roughness = matData.Roughness;
     uint diffuseTexIndex = matData.DiffuseMapIndex;
     float3 uvw = float3(pin.TexC, pin.PrimID % 3);
-    diffuseAlbedo *= gDiffuseMap[diffuseTexIndex].Sample(gsamAnisotropicWrap, uvw.xy);
+    diffuseAlbedo *= gDiffuseMap[8].Sample(gsamAnisotropicWrap, uvw.xy);
 	
 #ifdef ALPHA_TEST
 	// Discard pixel if texture alpha < 0.1.  We do this test as soon 

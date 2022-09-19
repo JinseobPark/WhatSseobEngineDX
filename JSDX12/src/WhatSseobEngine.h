@@ -10,16 +10,13 @@
 #include "Imgui/imgui.h"
 #include "Imgui/imgui_impl_dx12.h"
 #include "Imgui/imgui_impl_win32.h"
+#include "Texture/CubeRenderTarget.h"
+#include "Datas.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-struct ImguiData
-{
-	XMFLOAT3 pickposition = { 0, 0, 0 };
-
-};
 
 
 class Engine : public D3DApp
@@ -33,6 +30,7 @@ public:
 	virtual bool Initialize()override;
 
 private:
+	virtual void CreateRtvAndDsvDescriptorHeaps()override;
 	virtual void OnResize()override;
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Draw(const GameTimer& gt)override;
@@ -46,11 +44,13 @@ private:
 	void UpdateObjectCBs(const GameTimer& gt);
 	void UpdateMaterialCBs(const GameTimer& gt);
 	void UpdateMainPassCB(const GameTimer& gt);
-	void UpdateReflectedPassCB(const GameTimer& gt);
+	//void UpdateReflectedPassCB(const GameTimer& gt);
+	void UpdateCubeMapFacePassCBs();
 
 	void LoadTextures();
 	void BuildRootSignature();
 	void BuildDescriptorHeaps();
+	void BuildCubeDepthStencil();
 	void BuildShadersAndInputLayout();
 	void BuildShapeGeometry();
 	void BuildTreeSpritesGeometry();
@@ -62,9 +62,11 @@ private:
 
 	void BuildRenderItems();
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+	void DrawSceneToCubeMap();
 
 	void Pick(int sx, int sy);
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+	void BuildCubeFaceCamera(float x, float y, float z);
 
 
 	//Imgui
@@ -78,11 +80,13 @@ private:
 	FrameResource* mCurrFrameResource = nullptr;
 	int mCurrFrameResourceIndex = 0;
 
-	UINT mCbvSrvDescriptorSize = 0;
+	//UINT mCbvSrvDescriptorSize = 0;
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 
 	ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
+
+	ComPtr<ID3D12Resource> mCubeDepthStencilBuffer;
 
 	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
 	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
@@ -106,13 +110,18 @@ private:
 	//UINT mInstanceCount = 0;
 	//bool mFrustumCullingEnabled = true;
 	UINT mSkyTexHeapIndex = 0;
+	UINT mDynamicTexHeapIndex = 0;
+
+	std::unique_ptr<CubeRenderTarget> mDynamicCubeMap = nullptr;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE mCubeDSV;
 
 	PassConstants mMainPassCB;
-	PassConstants mReflectedPassCB;
+	//PassConstants mReflectedPassCB;
 
 	//BoundingFrustum mCamFrustum;
 
 	Camera mCamera;
+	Camera mCubeMapCamera[6];
 
 	POINT mLastMousePos;
 

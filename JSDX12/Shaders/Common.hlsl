@@ -34,7 +34,7 @@ TextureCube gCubeMap : register(t0);
 
 // An array of textures, which is only supported in shader model 5.1+.  Unlike Texture2DArray, the textures
 // in this array can be different sizes and formats, making it more flexible than texture arrays.
-Texture2D gDiffuseMap[10] : register(t1);
+Texture2D gDiffuseMap[11] : register(t1);
 
 // Put in space1, so the texture array does not overlap with these resources.  
 // The texture array will occupy registers t0, t1, ..., t3 in space0. 
@@ -77,7 +77,11 @@ cbuffer cbPass : register(b1)
     float gTotalTime;
     float gDeltaTime;
     float4 gAmbientLight;
-
+    
+    float4 gFogColor;
+    float gFogStart;
+    float gFogRange;
+    float2 cbPerObjectPad2;
     // Indices [0, NUM_DIR_LIGHTS) are directional lights;
     // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
     // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)

@@ -87,6 +87,12 @@
     <ClInclude Include="src\Imgui\imgui_impl_dx11.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\Texture\CubeRenderTarget.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Datas.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Object\Camera.cpp">
@@ -141,6 +147,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\Imgui\imgui_impl_dx11.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Texture\CubeRenderTarget.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
