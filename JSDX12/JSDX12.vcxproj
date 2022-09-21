@@ -161,6 +161,8 @@
     <ClInclude Include="src\Object\Object.h" />
     <ClInclude Include="src\Object\RenderItem.h" />
     <ClInclude Include="src\Texture\CubeRenderTarget.h" />
+    <ClInclude Include="src\Texture\ShadowMap.h" />
+    <ClInclude Include="src\Texture\Ssao.h" />
     <ClInclude Include="src\Util\DXDefine.h" />
     <ClInclude Include="src\Util\GameTimer.h" />
     <ClInclude Include="src\Object\GeometryGenerator.h" />
@@ -183,6 +185,8 @@
     <ClCompile Include="src\DirectX\d3dUtil.cpp" />
     <ClCompile Include="src\DirectX\DDSTextureLoader.cpp" />
     <ClCompile Include="src\Texture\CubeRenderTarget.cpp" />
+    <ClCompile Include="src\Texture\ShadowMap.cpp" />
+    <ClCompile Include="src\Texture\Ssao.cpp" />
     <ClCompile Include="src\Util\GameTimer.cpp" />
     <ClCompile Include="src\Object\GeometryGenerator.cpp" />
     <ClCompile Include="src\Util\MathHelper.cpp" />

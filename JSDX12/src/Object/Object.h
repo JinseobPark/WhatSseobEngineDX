@@ -114,6 +114,7 @@ struct Material
 
 	// Index into SRV heap for normal texture.
 	int NormalSrvHeapIndex = -1;
+	int hasNormalMap = 0;
 
 	// Dirty flag indicating the material has changed and we need to update the constant buffer.
 	// Because we have a material constant buffer for each FrameResource, we have to apply the
@@ -150,7 +151,8 @@ enum class RenderLayer : int
 	Shadow,
 	Highlight,
 	Sky,
-	OpaqueDynamicReflectors,
+	OpaqueDynamicReflectors, 
+	Debug,
 	Count
 };
 
