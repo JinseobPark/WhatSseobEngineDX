@@ -87,16 +87,31 @@
     <ClInclude Include="src\Imgui\imgui_impl_dx11.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\Texture\CubeRenderTarget.h">
+    <ClInclude Include="src\DirectX\Targets\CubeRenderTarget.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\Datas.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\Texture\ShadowMap.h">
+    <ClInclude Include="src\DirectX\Targets\ShadowMap.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\Texture\Ssao.h">
+    <ClInclude Include="src\DirectX\Targets\Ssao.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Object\Texture\Textures.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Object\Texture\Materials.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Object\Geometries.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DirectX\Shaders.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Object\RenderItems.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -155,13 +170,28 @@
     <ClCompile Include="src\Imgui\imgui_impl_dx11.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture\CubeRenderTarget.cpp">
+    <ClCompile Include="src\DirectX\Targets\CubeRenderTarget.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture\ShadowMap.cpp">
+    <ClCompile Include="src\DirectX\Targets\ShadowMap.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture\Ssao.cpp">
+    <ClCompile Include="src\DirectX\Targets\Ssao.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Object\Texture\Textures.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Object\Texture\Materials.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Object\Geometries.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DirectX\Shaders.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Object\RenderItems.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

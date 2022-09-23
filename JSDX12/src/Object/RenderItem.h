@@ -1,6 +1,8 @@
 #pragma once
 
 #include "d3dUtil.h"
+#include "../Object/Texture/Materials.h"
+#include "../Object/Geometries.h"
 #include "FrameResource.h"
 
 struct RenderItem

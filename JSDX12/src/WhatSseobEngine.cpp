@@ -33,6 +33,16 @@ bool Engine::Initialize()
 	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+	mTextures = std::make_unique<TextureClass>(md3dDevice.Get(), mCommandList.Get());
+
+	mMaterials = std::make_unique<MaterialClass>();
+
+	mGeometries = std::make_unique<GeoMetryClass>(md3dDevice.Get(), mCommandList.Get());
+
+	mShaders = std::make_unique<ShaderClass>();
+
+	mRenderItems = std::make_unique<RenderItemClass>();
+
 	mShadowMap = std::make_unique<ShadowMap>(
 		md3dDevice.Get(), 2048, 2048);
 
@@ -54,17 +64,16 @@ bool Engine::Initialize()
 		CubeMapSize, CubeMapSize, DXGI_FORMAT_R8G8B8A8_UNORM);
 	*/
 
-	LoadTextures();
+	mTextures->LoadTextures();
+	mMaterials->BuildMaterials();
+
 	BuildRootSignature();
 	BuildSsaoRootSignature();
 	BuildDescriptorHeaps();
-	BuildShadersAndInputLayout();
 	//BuildCubeDepthStencil();
-	BuildShapeGeometry();
-	BuildCarGeometry();
-	BuildTreeSpritesGeometry();
-	BuildMaterials();
-	BuildRenderItems();
+	mShaders->BuildShadersAndInputLayout();
+	mGeometries->BuildGeomatries();
+	mRenderItems->BuildRenderItems( &mMaterials, &mGeometries);
 	BuildFrameResources();
 	BuildPSOs();
 
@@ -298,7 +307,7 @@ void Engine::Draw(const GameTimer& gt)
 	*/
 
 	mCommandList->SetPipelineState(mPSOs["opaque"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
 
 	//
 	//stencil buffer
@@ -322,22 +331,22 @@ void Engine::Draw(const GameTimer& gt)
 
 
 	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTested, mCurrFrameResource);
 
 	mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTestedTreeSprites, mCurrFrameResource);
 
 	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Transparent, mCurrFrameResource);
 
 	mCommandList->SetPipelineState(mPSOs["highlight"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Highlight]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Highlight, mCurrFrameResource);
 
 	mCommandList->SetPipelineState(mPSOs["debug"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Debug]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Debug, mCurrFrameResource);
 
 	mCommandList->SetPipelineState(mPSOs["sky"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Sky, mCurrFrameResource);
 
 
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
@@ -377,7 +386,8 @@ void Engine::OnMouseDown(WPARAM btnState, int x, int y)
 	}
 	else if ((btnState & MK_LBUTTON) != 0)
 	{
-		Pick(x, y);
+		mRenderItems->Pick(x, y, mCamera, mClientWidth, mClientHeight);
+		//Pick(x, y);
 	}
 
 	guidata.pickposition.x = x;
@@ -432,7 +442,7 @@ void Engine::AnimateMaterials(const GameTimer& gt)
 void Engine::UpdateObjectCBs(const GameTimer& gt)
 {
 	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
-	for (auto& e : mAllRitems)
+	for (auto& e : mRenderItems->GetAllRiems())
 	{
 		// Only update the cbuffer data if the constants have changed.  
 		// This needs to be tracked per frame resource.
@@ -457,7 +467,7 @@ void Engine::UpdateObjectCBs(const GameTimer& gt)
 void Engine::UpdateMaterialCBs(const GameTimer& gt)
 {
 	auto currMaterialBuffer = mCurrFrameResource->MaterialBuffer.get();
-	for (auto& e : mMaterials)
+	for (auto& e : mMaterials->GetMaterials())
 	{
 		// Only update the cbuffer data if the constants have changed.  If the cbuffer
 		// data changes, it needs to be updated for each FrameResource.
@@ -698,61 +708,6 @@ void Engine::UpdateSsaoCB(const GameTimer& gt)
 	currSsaoCB->CopyData(0, ssaoCB);
 }
 
-
-
-void Engine::LoadTextures()
-{
-	std::vector<std::string> texNames =
-	{
-		"dump",					//0
-		"defaultTex",					//1
-		"defaultNormal",			 //2
-		"bricksTex",					// 3
-		"bricksTexN",			    // 4
-		"bricksTex2",				 //5
-		"bricksTex2N",			   //6
-		"bricksTex3",				  //7
-		"stoneTex",					   //8
-		"tileTex",					      //9
-		"tileTexN",				    //10
-		"checkboardTex",			 //11
-		"iceTex",						//12
-		"treeArrayTex",				//13
-		"skyCubeMap"				//14
-	};
-
-	std::vector<std::wstring> texFilenames =
-	{
-		L"Textures/white1x1.dds",			//0
-		L"Textures/white1x1.dds",			//1
-		L"Textures/default_nmap.dds",	//2
-		L"Textures/bricks.dds",				//3
-		L"Textures/bricks_nmap.dds",		//4
-		L"Textures/bricks2.dds",				//5
-		L"Textures/bricks2_nmap.dds",	//6
-		L"Textures/bricks3.dds",				//7
-		L"Textures/stone.dds",					//8
-		L"Textures/tile.dds",						//9
-		L"Textures/tile_nmap.dds",			//10
-		L"Textures/checkboard.dds",		//11
-		L"Textures/ice.dds",						//12
-		L"Textures/treeArray2.dds",			//13
-		L"Textures/grasscube1024.dds"	//14
-	};
-
-	for (int i = 0; i < (int)texNames.size(); ++i)
-	{
-		auto texMap = std::make_unique<Texture>();
-		texMap->Name = texNames[i];
-		texMap->Filename = texFilenames[i];
-		ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-			mCommandList.Get(), texMap->Filename.c_str(),
-			texMap->Resource, texMap->UploadHeap));
-
-		mTextures[texMap->Name] = std::move(texMap);
-	}
-}
-
 void Engine::BuildRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE texTable0;
@@ -897,22 +852,22 @@ void Engine::BuildDescriptorHeaps()
 
 	std::vector<ComPtr<ID3D12Resource>> tex2DList =
 	{
-		mTextures["dump"]->Resource,
-		mTextures["defaultTex"]->Resource,
-		mTextures["defaultNormal"]->Resource,
-		mTextures["bricksTex"]->Resource,
-		mTextures["bricksTexN"]->Resource,
-		mTextures["bricksTex2"]->Resource,
-		mTextures["bricksTex2N"]->Resource,
-		mTextures["bricksTex3"]->Resource,
-		mTextures["stoneTex"]->Resource,
-		mTextures["tileTex"]->Resource,
-		mTextures["tileTexN"]->Resource,
-		mTextures["checkboardTex"]->Resource,
-		mTextures["iceTex"]->Resource,
+		mTextures->GetResource("dump"),
+		mTextures->GetResource("defaultTex"),
+		mTextures->GetResource("defaultNormal"),
+		mTextures->GetResource("bricksTex"),
+		mTextures->GetResource("bricksTexN"),
+		mTextures->GetResource("bricksTex2"),
+		mTextures->GetResource("bricksTex2N"),
+		mTextures->GetResource("bricksTex3"),
+		mTextures->GetResource("stoneTex"),
+		mTextures->GetResource("tileTex"),
+		mTextures->GetResource("tileTexN"),
+		mTextures->GetResource("checkboardTex"),
+		mTextures->GetResource("iceTex"),
 	};
-	auto treeArrayTex = mTextures["treeArrayTex"]->Resource;
-	auto skyTex = mTextures["skyCubeMap"]->Resource;
+	auto treeArrayTex = mTextures->GetResource("treeArrayTex");
+	auto skyTex = mTextures->GetResource("skyCubeMap");
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -1056,445 +1011,25 @@ void Engine::BuildCubeDepthStencil()
 }
 */
 
-void Engine::BuildShadersAndInputLayout()
-{
-	const D3D_SHADER_MACRO defines[] =
-	{
-		"FOG", "1",
-		NULL, NULL
-	};
-
-	const D3D_SHADER_MACRO alphaTestDefines[] =
-	{
-		"FOG", "1",
-		"ALPHA_TEST", "1",
-		NULL, NULL
-	};
-
-	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", defines, "PS", "ps_5_1");
-	mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
-
-	mShaders["treeSpriteVS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["treeSpriteGS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "GS", "gs_5_1");
-	mShaders["treeSpritePS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", alphaTestDefines, "PS", "ps_5_1");
-
-	mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");
-
-	mShaders["shadowVS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
-	mShaders["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
-
-	mShaders["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
-
-	mShaders["drawNormalsVS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["drawNormalsPS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "PS", "ps_5_1");
-
-	mShaders["ssaoVS"] = d3dUtil::CompileShader(L"Shaders\\Ssao.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["ssaoPS"] = d3dUtil::CompileShader(L"Shaders\\Ssao.hlsl", nullptr, "PS", "ps_5_1");
-
-	mShaders["ssaoBlurVS"] = d3dUtil::CompileShader(L"Shaders\\SsaoBlur.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["ssaoBlurPS"] = d3dUtil::CompileShader(L"Shaders\\SsaoBlur.hlsl", nullptr, "PS", "ps_5_1");
-	mInputLayout =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	};
-
-	mTreeSpriteInputLayout =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	};
-}
-
-void Engine::BuildShapeGeometry()
-{
-	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-	GeometryGenerator::MeshData grid = geoGen.CreateGrid(1.0f, 1.0f, 60, 40);
-	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
-	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
-	GeometryGenerator::MeshData quad = geoGen.CreateQuad(0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
-
-	XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
-	XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
-
-	XMVECTOR vMin = XMLoadFloat3(&vMinf3);
-	XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
-	//
-	// We are concatenating all the geometry into one big vertex/index buffer.  So
-	// define the regions in the buffer each submesh covers.
-	//
-
-	// Cache the vertex offsets to each object in the concatenated vertex buffer.
-	UINT boxVertexOffset = 0;
-	UINT gridVertexOffset = (UINT)box.Vertices.size();
-	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
-	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
-	UINT quadVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
-
-	// Cache the starting index for each object in the concatenated index buffer.
-	UINT boxIndexOffset = 0;
-	UINT gridIndexOffset = (UINT)box.Indices32.size();
-	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
-	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
-	UINT quadIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
-
-	SubmeshGeometry boxSubmesh;
-	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
-	boxSubmesh.StartIndexLocation = boxIndexOffset;
-	boxSubmesh.BaseVertexLocation = boxVertexOffset;
-
-	SubmeshGeometry gridSubmesh;
-	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-	gridSubmesh.StartIndexLocation = gridIndexOffset;
-	gridSubmesh.BaseVertexLocation = gridVertexOffset;
-
-	SubmeshGeometry sphereSubmesh;
-	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
-	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
-
-	SubmeshGeometry cylinderSubmesh;
-	cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
-	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
-	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
-
-	SubmeshGeometry quadSubmesh;
-	quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
-	quadSubmesh.StartIndexLocation = quadIndexOffset;
-	quadSubmesh.BaseVertexLocation = quadVertexOffset;
-	//
-	// Extract the vertex elements we are interested in and pack the
-	// vertices of all the meshes into one vertex buffer.
-	//
-
-	auto totalVertexCount =
-		box.Vertices.size() +
-		grid.Vertices.size() +
-		sphere.Vertices.size() +
-		cylinder.Vertices.size()+
-		quad.Vertices.size();
-
-	std::vector<Vertex> vertices(totalVertexCount);
-
-	UINT k = 0;
-	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Normal = box.Vertices[i].Normal;
-		vertices[k].TexC = box.Vertices[i].TexC;
-		vertices[k].TangentU = box.Vertices[i].TangentU;
-
-		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-	XMStoreFloat3(&boxSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&boxSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
-	vMin = XMLoadFloat3(&vMinf3);
-	vMax = XMLoadFloat3(&vMaxf3);
-
-	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Normal = grid.Vertices[i].Normal;
-		vertices[k].TexC = grid.Vertices[i].TexC;
-		vertices[k].TangentU = grid.Vertices[i].TangentU;
-
-		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-	XMStoreFloat3(&gridSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&gridSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
-	vMin = XMLoadFloat3(&vMinf3);
-	vMax = XMLoadFloat3(&vMaxf3);
-
-	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = sphere.Vertices[i].Position;
-		vertices[k].Normal = sphere.Vertices[i].Normal;
-		vertices[k].TexC = sphere.Vertices[i].TexC;
-		vertices[k].TangentU = sphere.Vertices[i].TangentU;
-
-		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-	XMStoreFloat3(&sphereSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&sphereSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
-	vMin = XMLoadFloat3(&vMinf3);
-	vMax = XMLoadFloat3(&vMaxf3);
-
-	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = cylinder.Vertices[i].Position;
-		vertices[k].Normal = cylinder.Vertices[i].Normal;
-		vertices[k].TexC = cylinder.Vertices[i].TexC;
-		vertices[k].TangentU = cylinder.Vertices[i].TangentU;
-
-		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-	XMStoreFloat3(&cylinderSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&cylinderSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
-	vMin = XMLoadFloat3(&vMinf3);
-	vMax = XMLoadFloat3(&vMaxf3);
-
-	for (int i = 0; i < quad.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = quad.Vertices[i].Position;
-		vertices[k].Normal = quad.Vertices[i].Normal;
-		vertices[k].TexC = quad.Vertices[i].TexC;
-		vertices[k].TangentU = quad.Vertices[i].TangentU;
-
-		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-	XMStoreFloat3(&quadSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&quadSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
-
-
-
-	std::vector<std::uint16_t> indices;
-	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
-	indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "shapeGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	geo->DrawArgs["box"] = boxSubmesh;
-	geo->DrawArgs["grid"] = gridSubmesh;
-	geo->DrawArgs["sphere"] = sphereSubmesh;
-	geo->DrawArgs["cylinder"] = cylinderSubmesh;
-	geo->DrawArgs["quad"] = quadSubmesh;
-
-	mGeometries[geo->Name] = std::move(geo);
-}
-
-void Engine::BuildTreeSpritesGeometry()
-{
-	struct TreeSpriteVertex
-	{
-		XMFLOAT3 Pos;
-		XMFLOAT2 Size;
-	};
-
-	static const int treeCount = 40;
-	std::array<TreeSpriteVertex, treeCount> vertices;
-	for (UINT i = 0; i < treeCount; ++i)
-	{
-		float x = MathHelper::RandF(-4.0f, 4.0f);
-		float z = MathHelper::RandF(-4.0f, 4.0f);
-		float y = 0.0f;
-
-		// Move tree slightly above land height.
-		y += 1.0f;
-
-		vertices[i].Pos = XMFLOAT3(x, y, z);
-		vertices[i].Size = XMFLOAT2(2.0f, 2.0f);
-	}
-
-	std::array<std::uint16_t, 40> indices =
-	{
-		0, 1, 2, 3, 4, 5, 6, 7,
-		8, 9, 10, 11, 12, 13, 14, 15,
-		16, 17, 18, 19, 20, 21, 22, 23,
-		24, 25, 26, 27, 28, 29, 30, 31,
-		32, 33, 34, 35, 36, 37, 38, 39
-	};
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(TreeSpriteVertex);
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "treeSpritesGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(TreeSpriteVertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-
-	geo->DrawArgs["points"] = submesh;
-
-	mGeometries["treeSpritesGeo"] = std::move(geo);
-}
-
-void Engine::BuildCarGeometry()
-{
-	std::ifstream fin("Models/car.txt");
-
-	if (!fin)
-	{
-		MessageBox(0, L"Models/car.txt not found.", 0, 0);
-		return;
-	}
-
-	UINT vcount = 0;
-	UINT tcount = 0;
-	std::string ignore;
-
-	fin >> ignore >> vcount;
-	fin >> ignore >> tcount;
-	fin >> ignore >> ignore >> ignore >> ignore;
-
-	XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
-	XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
-
-	XMVECTOR vMin = XMLoadFloat3(&vMinf3);
-	XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
-
-	std::vector<Vertex> vertices(vcount);
-	for (UINT i = 0; i < vcount; ++i)
-	{
-		fin >> vertices[i].Pos.x >> vertices[i].Pos.y >> vertices[i].Pos.z;
-		fin >> vertices[i].Normal.x >> vertices[i].Normal.y >> vertices[i].Normal.z;
-
-		vertices[i].TangentU = XMFLOAT3(0, 0, 0);
-		XMVECTOR P = XMLoadFloat3(&vertices[i].Pos);
-
-		// Project point onto unit sphere and generate spherical texture coordinates.
-		XMFLOAT3 spherePos;
-		XMStoreFloat3(&spherePos, XMVector3Normalize(P));
-
-		float theta = atan2f(spherePos.z, spherePos.x);
-
-		// Put in [0, 2pi].
-		if (theta < 0.0f)
-			theta += XM_2PI;
-
-		float phi = acosf(spherePos.y);
-
-		float u = theta / (2.0f * XM_PI);
-		float v = phi / XM_PI;
-
-		vertices[i].TexC = { u, v };
-
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-
-	BoundingBox bounds;
-	XMStoreFloat3(&bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&bounds.Extents, 0.5f * (vMax - vMin));
-
-	fin >> ignore;
-	fin >> ignore;
-	fin >> ignore;
-
-	std::vector<std::int32_t> indices(3 * tcount);
-	for (UINT i = 0; i < tcount; ++i)
-	{
-		fin >> indices[i * 3 + 0] >> indices[i * 3 + 1] >> indices[i * 3 + 2];
-	}
-
-	fin.close();
-
-	//
-	// Pack the indices of all the meshes into one index buffer.
-	//
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "carGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R32_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-	submesh.Bounds = bounds;
-
-	geo->DrawArgs["car"] = submesh;
-
-	mGeometries[geo->Name] = std::move(geo);
-}
-
 void Engine::BuildPSOs()
 {
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC basePsoDesc;
-
+	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultLayout = mShaders->GetInputLayout();
+	std::vector<D3D12_INPUT_ELEMENT_DESC> treeLayout = mShaders->GetTreeSpriteInputLayout();
 
 	ZeroMemory(&basePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	basePsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+	basePsoDesc.InputLayout = { defaultLayout.data(), (UINT)defaultLayout.size() };
 	basePsoDesc.pRootSignature = mRootSignature.Get();
 	basePsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["standardVS"]->GetBufferPointer()),
-		mShaders["standardVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("standardVS")->GetBufferPointer()),
+		mShaders->GetShader("standardVS")->GetBufferSize()
 	};
 	basePsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["opaquePS"]->GetBufferPointer()),
-		mShaders["opaquePS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("opaquePS")->GetBufferPointer()),
+		mShaders->GetShader("opaquePS")->GetBufferSize()
 	};
 	basePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	basePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -1542,8 +1077,8 @@ void Engine::BuildPSOs()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC alphaTestedPsoDesc = basePsoDesc;
 	alphaTestedPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["alphaTestedPS"]->GetBufferPointer()),
-		mShaders["alphaTestedPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("alphaTestedPS")->GetBufferPointer()),
+		mShaders->GetShader("alphaTestedPS")->GetBufferSize()
 	};
 	alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
@@ -1554,21 +1089,21 @@ void Engine::BuildPSOs()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC treeSpritePsoDesc = basePsoDesc;
 	treeSpritePsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpriteVS"]->GetBufferPointer()),
-		mShaders["treeSpriteVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("treeSpriteVS")->GetBufferPointer()),
+		mShaders->GetShader("treeSpriteVS")->GetBufferSize()
 	};
 	treeSpritePsoDesc.GS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpriteGS"]->GetBufferPointer()),
-		mShaders["treeSpriteGS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("treeSpriteGS")->GetBufferPointer()),
+		mShaders->GetShader("treeSpriteGS")->GetBufferSize()
 	};
 	treeSpritePsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpritePS"]->GetBufferPointer()),
-		mShaders["treeSpritePS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("treeSpritePS")->GetBufferPointer()),
+		mShaders->GetShader("treeSpritePS")->GetBufferSize()
 	};
 	treeSpritePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	treeSpritePsoDesc.InputLayout = { mTreeSpriteInputLayout.data(), (UINT)mTreeSpriteInputLayout.size() };
+	treeSpritePsoDesc.InputLayout = { treeLayout.data(), (UINT)treeLayout.size() };
 	treeSpritePsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&treeSpritePsoDesc, IID_PPV_ARGS(&mPSOs["treeSprites"])));
@@ -1693,13 +1228,13 @@ void Engine::BuildPSOs()
 	skyPsoDesc.pRootSignature = mRootSignature.Get();
 	skyPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["skyVS"]->GetBufferPointer()),
-		mShaders["skyVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("skyVS")->GetBufferPointer()),
+		mShaders->GetShader("skyVS")->GetBufferSize()
 	};
 	skyPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["skyPS"]->GetBufferPointer()),
-		mShaders["skyPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("skyPS")->GetBufferPointer()),
+		mShaders->GetShader("skyPS")->GetBufferSize()
 	};
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&skyPsoDesc, IID_PPV_ARGS(&mPSOs["sky"])));
 
@@ -1713,13 +1248,13 @@ void Engine::BuildPSOs()
 	smapPsoDesc.pRootSignature = mRootSignature.Get();
 	smapPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["shadowVS"]->GetBufferPointer()),
-		mShaders["shadowVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("shadowVS")->GetBufferPointer()),
+		mShaders->GetShader("shadowVS")->GetBufferSize()
 	};
 	smapPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["shadowOpaquePS"]->GetBufferPointer()),
-		mShaders["shadowOpaquePS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("shadowOpaquePS")->GetBufferPointer()),
+		mShaders->GetShader("shadowOpaquePS")->GetBufferSize()
 	};
 
 	// Shadow map pass does not have a render target.
@@ -1734,13 +1269,13 @@ void Engine::BuildPSOs()
 	debugPsoDesc.pRootSignature = mRootSignature.Get();
 	debugPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["debugVS"]->GetBufferPointer()),
-		mShaders["debugVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugVS")->GetBufferPointer()),
+		mShaders->GetShader("debugVS")->GetBufferSize()
 	};
 	debugPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["debugPS"]->GetBufferPointer()),
-		mShaders["debugPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugPS")->GetBufferPointer()),
+		mShaders->GetShader("debugPS")->GetBufferSize()
 	};
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&debugPsoDesc, IID_PPV_ARGS(&mPSOs["debug"])));
 
@@ -1750,13 +1285,13 @@ void Engine::BuildPSOs()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC drawNormalsPsoDesc = basePsoDesc;
 	drawNormalsPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["drawNormalsVS"]->GetBufferPointer()),
-		mShaders["drawNormalsVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("drawNormalsVS")->GetBufferPointer()),
+		mShaders->GetShader("drawNormalsVS")->GetBufferSize()
 	};
 	drawNormalsPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["drawNormalsPS"]->GetBufferPointer()),
-		mShaders["drawNormalsPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("drawNormalsPS")->GetBufferPointer()),
+		mShaders->GetShader("drawNormalsPS")->GetBufferSize()
 	};
 	drawNormalsPsoDesc.RTVFormats[0] = Ssao::NormalMapFormat;
 	drawNormalsPsoDesc.SampleDesc.Count = 1;
@@ -1772,13 +1307,13 @@ void Engine::BuildPSOs()
 	ssaoPsoDesc.pRootSignature = mSsaoRootSignature.Get();
 	ssaoPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["ssaoVS"]->GetBufferPointer()),
-		mShaders["ssaoVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("ssaoVS")->GetBufferPointer()),
+		mShaders->GetShader("ssaoVS")->GetBufferSize()
 	};
 	ssaoPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["ssaoPS"]->GetBufferPointer()),
-		mShaders["ssaoPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("ssaoPS")->GetBufferPointer()),
+		mShaders->GetShader("ssaoPS")->GetBufferSize()
 	};
 
 	// SSAO effect does not need the depth buffer.
@@ -1796,13 +1331,13 @@ void Engine::BuildPSOs()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC ssaoBlurPsoDesc = ssaoPsoDesc;
 	ssaoBlurPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["ssaoBlurVS"]->GetBufferPointer()),
-		mShaders["ssaoBlurVS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("ssaoBlurVS")->GetBufferPointer()),
+		mShaders->GetShader("ssaoBlurVS")->GetBufferSize()
 	};
 	ssaoBlurPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders["ssaoBlurPS"]->GetBufferPointer()),
-		mShaders["ssaoBlurPS"]->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("ssaoBlurPS")->GetBufferPointer()),
+		mShaders->GetShader("ssaoBlurPS")->GetBufferSize()
 	};
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ssaoBlurPsoDesc, IID_PPV_ARGS(&mPSOs["ssaoBlur"])));
 
@@ -1813,374 +1348,7 @@ void Engine::BuildFrameResources()
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
 		mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-			2, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
-	}
-}
-
-void Engine::BuildMaterials()
-{
-	auto bricks0 = std::make_unique<Material>();
-	bricks0->Name = "bricks0";
-	bricks0->MatCBIndex = 0;
-	bricks0->DiffuseSrvHeapIndex = 3;
-	bricks0->NormalSrvHeapIndex = 4;
-	bricks0->hasNormalMap = 1;
-	bricks0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
-	bricks0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	bricks0->Roughness = 0.1f;
-
-	auto bricks1 = std::make_unique<Material>();
-	bricks1->Name = "bricks1";
-	bricks1->MatCBIndex = 1;
-	bricks1->DiffuseSrvHeapIndex = 5;
-	bricks1->NormalSrvHeapIndex = 6;
-	bricks1->hasNormalMap = 1;
-	bricks1->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	bricks1->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	bricks1->Roughness = 0.25f;
-
-	auto bricks2 = std::make_unique<Material>();
-	bricks2->Name = "bricks2";
-	bricks2->MatCBIndex = 2;
-	bricks2->DiffuseSrvHeapIndex = 7;
-	bricks2->NormalSrvHeapIndex = 2;
-	bricks2->hasNormalMap = 0;
-	bricks2->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	bricks2->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	bricks2->Roughness = 0.2f;
-
-	auto stone0 = std::make_unique<Material>();
-	stone0->Name = "stone0";
-	stone0->MatCBIndex = 3;
-	stone0->DiffuseSrvHeapIndex = 8;
-	stone0->NormalSrvHeapIndex = 2;
-	stone0->hasNormalMap = 0;
-	stone0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
-	stone0->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	stone0->Roughness = 0.3f;
-
-	auto tile0 = std::make_unique<Material>();
-	tile0->Name = "tile0";
-	tile0->MatCBIndex = 4;
-	tile0->DiffuseSrvHeapIndex = 9;
-	tile0->NormalSrvHeapIndex = 10;
-	tile0->hasNormalMap = 1;
-	tile0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	tile0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	tile0->Roughness = 0.3f;
-
-	auto checkertile = std::make_unique<Material>();
-	checkertile->Name = "checkertile";
-	checkertile->MatCBIndex = 5;
-	checkertile->DiffuseSrvHeapIndex = 11;
-	checkertile->NormalSrvHeapIndex = 2;
-	checkertile->hasNormalMap = 0;
-	checkertile->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	checkertile->FresnelR0 = XMFLOAT3(0.07f, 0.07f, 0.07f);
-	checkertile->Roughness = 0.3f;
-
-	auto icemirror = std::make_unique<Material>();
-	icemirror->Name = "icemirror";
-	icemirror->MatCBIndex = 6;
-	icemirror->DiffuseSrvHeapIndex = 12;
-	icemirror->NormalSrvHeapIndex = 2;
-	icemirror->hasNormalMap = 0;
-	icemirror->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f);
-	icemirror->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	icemirror->Roughness = 0.5f;
-
-	auto defaultMat = std::make_unique<Material>();
-	defaultMat->Name = "default";
-	defaultMat->MatCBIndex = 7;
-	defaultMat->DiffuseSrvHeapIndex = 1;
-	defaultMat->NormalSrvHeapIndex = 2;
-	defaultMat->hasNormalMap = 0;
-	defaultMat->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	defaultMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	defaultMat->Roughness = 0.3f;
-
-
-	auto treeSprites = std::make_unique<Material>();
-	treeSprites->Name = "treeSprites";
-	treeSprites->MatCBIndex = 8;
-	treeSprites->DiffuseSrvHeapIndex = 13;
-	treeSprites->NormalSrvHeapIndex = 2;
-	treeSprites->hasNormalMap = 0;
-	treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	treeSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
-	treeSprites->Roughness = 0.125f;
-
-
-	auto gray0 = std::make_unique<Material>();
-	gray0->Name = "gray0";
-	gray0->MatCBIndex = 9;
-	gray0->DiffuseSrvHeapIndex = 1;
-	gray0->NormalSrvHeapIndex = 2;
-	gray0->hasNormalMap = 0;
-	gray0->DiffuseAlbedo = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
-	gray0->FresnelR0 = XMFLOAT3(0.04f, 0.04f, 0.04f);
-	gray0->Roughness = 0.0f;
-
-	auto highlight0 = std::make_unique<Material>();
-	highlight0->Name = "highlight0";
-	highlight0->MatCBIndex = 10;
-	highlight0->DiffuseSrvHeapIndex = 1;
-	highlight0->NormalSrvHeapIndex = 2;
-	highlight0->hasNormalMap = 0;
-	highlight0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.6f);
-	highlight0->FresnelR0 = XMFLOAT3(0.06f, 0.06f, 0.06f);
-	highlight0->Roughness = 0.0f;
-
-	auto mirror0 = std::make_unique<Material>();
-	mirror0->Name = "mirror0";
-	mirror0->MatCBIndex = 11;
-	mirror0->DiffuseSrvHeapIndex = 1;
-	mirror0->NormalSrvHeapIndex = 2;
-	mirror0->hasNormalMap = 0;
-	mirror0->DiffuseAlbedo = XMFLOAT4(0.0f, 0.0f, 0.1f, 1.0f);
-	mirror0->FresnelR0 = XMFLOAT3(0.98f, 0.97f, 0.95f);
-	mirror0->Roughness = 0.1f;
-
-	auto sky = std::make_unique<Material>();
-	sky->Name = "sky";
-	sky->MatCBIndex = 12;
-	sky->DiffuseSrvHeapIndex = 14;
-	sky->NormalSrvHeapIndex = 2;
-	sky->hasNormalMap = 0;
-	sky->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	sky->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	sky->Roughness = 1.0f;
-
-	mMaterials["bricks0"] = std::move(bricks0);
-	mMaterials["bricks1"] = std::move(bricks1);
-	mMaterials["bricks2"] = std::move(bricks2);
-	mMaterials["stone0"] = std::move(stone0);
-	mMaterials["tile0"] = std::move(tile0);
-	mMaterials["checkertile"] = std::move(checkertile);
-	mMaterials["icemirror"] = std::move(icemirror);
-	mMaterials["defaultMat"] = std::move(defaultMat);
-	mMaterials["treeSprites"] = std::move(treeSprites);
-	mMaterials["gray0"] = std::move(gray0);
-	mMaterials["highlight0"] = std::move(highlight0);
-	mMaterials["mirror0"] = std::move(mirror0);
-	mMaterials["sky"] = std::move(sky);
-
-}
-
-void Engine::BuildRenderItems()
-{
-	UINT objCBIndex = 0;
-
-	auto skyRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
-	skyRitem->TexTransform = MathHelper::Identity4x4();
-	skyRitem->ObjCBIndex = objCBIndex++;
-	skyRitem->Mat = mMaterials["sky"].get();
-	skyRitem->Geo = mGeometries["shapeGeo"].get();
-	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	skyRitem->IndexCount = skyRitem->Geo->DrawArgs["sphere"].IndexCount;
-	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
-	mAllRitems.push_back(std::move(skyRitem));
-
-	auto quadRitem = std::make_unique<RenderItem>();
-	quadRitem->World = MathHelper::Identity4x4();
-	quadRitem->TexTransform = MathHelper::Identity4x4();
-	quadRitem->ObjCBIndex = objCBIndex++;
-	quadRitem->Mat = mMaterials["bricks0"].get();
-	quadRitem->Geo = mGeometries["shapeGeo"].get();
-	quadRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	quadRitem->IndexCount = quadRitem->Geo->DrawArgs["quad"].IndexCount;
-	quadRitem->StartIndexLocation = quadRitem->Geo->DrawArgs["quad"].StartIndexLocation;
-	quadRitem->BaseVertexLocation = quadRitem->Geo->DrawArgs["quad"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Debug].push_back(quadRitem.get());
-	mAllRitems.push_back(std::move(quadRitem));
-
-	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	boxRitem->ObjCBIndex = objCBIndex++;
-	boxRitem->Mat = mMaterials["mirror0"].get();
-	boxRitem->Geo = mGeometries["shapeGeo"].get();
-	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
-	mAllRitems.push_back(std::move(boxRitem));
-	
-	auto gridRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(20.0f, 0.1f, 30.0f));
-	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
-	gridRitem->ObjCBIndex = objCBIndex++;
-	gridRitem->Mat = mMaterials["tile0"].get();
-	gridRitem->Geo = mGeometries["shapeGeo"].get();
-	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
-	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
-	mAllRitems.push_back(std::move(gridRitem));
-
-	XMMATRIX brickTexTransform = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-	for (int i = 0; i < 5; ++i)
-	{
-		auto leftCylRitem = std::make_unique<RenderItem>();
-		auto rightCylRitem = std::make_unique<RenderItem>();
-		auto leftSphereRitem = std::make_unique<RenderItem>();
-		auto rightSphereRitem = std::make_unique<RenderItem>();
-
-		XMMATRIX leftCylWorld = XMMatrixTranslation(-5.0f, 1.5f, -10.0f + i * 5.0f);
-		XMMATRIX rightCylWorld = XMMatrixTranslation(+5.0f, 1.5f, -10.0f + i * 5.0f);
-
-		XMMATRIX leftSphereWorld = XMMatrixTranslation(-5.0f, 3.5f, -10.0f + i * 5.0f);
-		XMMATRIX rightSphereWorld = XMMatrixTranslation(+5.0f, 3.5f, -10.0f + i * 5.0f);
-
-		XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
-		XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
-		leftCylRitem->ObjCBIndex = objCBIndex++;
-		leftCylRitem->Mat = mMaterials["bricks1"].get();
-		leftCylRitem->Geo = mGeometries["shapeGeo"].get();
-		leftCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
-		XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
-		rightCylRitem->ObjCBIndex = objCBIndex++;
-		rightCylRitem->Mat = mMaterials["bricks0"].get();
-		rightCylRitem->Geo = mGeometries["shapeGeo"].get();
-		rightCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
-		leftSphereRitem->TexTransform = MathHelper::Identity4x4();
-		leftSphereRitem->ObjCBIndex = objCBIndex++;
-		leftSphereRitem->Mat = mMaterials["stone0"].get();
-		leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
-		leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
-		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
-		rightSphereRitem->ObjCBIndex = objCBIndex++;
-		rightSphereRitem->Mat = mMaterials["mirror0"].get();
-		rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
-		rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-		
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Transparent].push_back(leftSphereRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
-
-		mAllRitems.push_back(std::move(leftCylRitem));
-		mAllRitems.push_back(std::move(rightCylRitem));
-		mAllRitems.push_back(std::move(leftSphereRitem));
-		mAllRitems.push_back(std::move(rightSphereRitem));
-	}
-
-	auto treeSpritesRitem = std::make_unique<RenderItem>();
-	treeSpritesRitem->World = MathHelper::Identity4x4();
-	treeSpritesRitem->ObjCBIndex = objCBIndex++;
-	treeSpritesRitem->Mat = mMaterials["tile0"].get();
-	treeSpritesRitem->Geo = mGeometries["treeSpritesGeo"].get();
-	treeSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
-	treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
-	treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
-	mAllRitems.push_back(std::move(treeSpritesRitem));
-
-	//
-	// car
-	//
-
-	auto carRitem2 = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&carRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(-5.0f,2.0f, 0.0f));
-	XMStoreFloat4x4(&carRitem2->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
-	carRitem2->ObjCBIndex = objCBIndex++;
-	carRitem2->Mat = mMaterials["tile0"].get();
-	carRitem2->Geo = mGeometries["carGeo"].get();
-	carRitem2->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	carRitem2->Bounds = carRitem2->Geo->DrawArgs["car"].Bounds;
-	carRitem2->IndexCount = carRitem2->Geo->DrawArgs["car"].IndexCount;
-	carRitem2->StartIndexLocation = carRitem2->Geo->DrawArgs["car"].StartIndexLocation;
-	carRitem2->BaseVertexLocation = carRitem2->Geo->DrawArgs["car"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(carRitem2.get());
-	mAllRitems.push_back(std::move(carRitem2));
-
-	auto carRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&carRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 5.0f, 0.0f));
-	XMStoreFloat4x4(&carRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
-	carRitem->ObjCBIndex = objCBIndex++;
-	carRitem->Mat = mMaterials["mirror0"].get();
-	carRitem->Geo = mGeometries["carGeo"].get();
-	carRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	carRitem->IndexCount = carRitem->Geo->DrawArgs["car"].IndexCount;
-	carRitem->StartIndexLocation = carRitem->Geo->DrawArgs["car"].StartIndexLocation;
-	carRitem->BaseVertexLocation = carRitem->Geo->DrawArgs["car"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(carRitem.get());
-	mAllRitems.push_back(std::move(carRitem));
-
-	//
-	// picked item
-	//
-	auto pickedRitem = std::make_unique<RenderItem>();
-	pickedRitem->World = MathHelper::Identity4x4();
-	pickedRitem->TexTransform = MathHelper::Identity4x4();
-	pickedRitem->ObjCBIndex = objCBIndex++;
-	pickedRitem->Mat = mMaterials["highlight0"].get();
-	pickedRitem->Geo = mGeometries["carGeo"].get();
-	pickedRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-
-	// Picked triangle is not visible until one is picked.
-	pickedRitem->Visible = false;
-
-	// DrawCall parameters are filled out when a triangle is picked.
-	pickedRitem->IndexCount = 0;
-	pickedRitem->StartIndexLocation = 0;
-	pickedRitem->BaseVertexLocation = 0;
-	mPickedRitem = pickedRitem.get();
-	mRitemLayer[(int)RenderLayer::Highlight].push_back(pickedRitem.get());
-	mAllRitems.push_back(std::move(pickedRitem));
-}
-
-void Engine::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
-{
-	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
-	auto objectCB = mCurrFrameResource->ObjectCB->Resource();
-
-	// For each render item...
-	for (size_t i = 0; i < ritems.size(); ++i)
-	{
-		auto ri = ritems[i];
-
-		if (ri->Visible == false)
-			continue;
-
-		cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-		cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
-		cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
-
-		D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
-
-		cmdList->SetGraphicsRootConstantBufferView(0, objCBAddress);
-
-		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+			2, (UINT)mRenderItems->GetAllRiems().size(), (UINT)mMaterials->GetMaterialSize()));
 	}
 }
 
@@ -2256,7 +1424,7 @@ void Engine::DrawSceneToShadowMap()
 
 	mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
 
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
 
 	// Change back to GENERIC_READ so we can read the texture in a shader.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
@@ -2289,89 +1457,13 @@ void Engine::DrawNormalsAndDepth()
 
 	mCommandList->SetPipelineState(mPSOs["drawNormals"].Get());
 
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
 
 	// Change back to GENERIC_READ so we can read the texture in a shader.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 }
 
-void Engine::Pick(int sx, int sy)
-{
-	bool isPass = false;
-	XMFLOAT4X4 P = mCamera.GetProj4x4f();
-
-	// Compute picking ray in view space.
-	float vx = (+2.0f * sx / mClientWidth - 1.0f) / P(0, 0);
-	float vy = (-2.0f * sy / mClientHeight + 1.0f) / P(1, 1);
-
-	// Ray definition in view space.
-	XMVECTOR rayOrigin = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	XMVECTOR rayDir = XMVectorSet(vx, vy, 1.0f, 0.0f);
-
-	XMMATRIX V = mCamera.GetView();
-	XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(V), V);
-
-	rayOrigin = XMVector3TransformCoord(rayOrigin, invView);
-	rayDir = XMVector3TransformNormal(rayDir, invView);
-	// Assume nothing is picked to start, so the picked render-item is invisible.
-	mPickedRitem->Visible = false;
-
-	float tmax = 99999.0f;
-	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
-	// of objects that can be selected.   
-	for (auto ri : mRitemLayer[(int)RenderLayer::Opaque])
-	{
-		//auto geo = ri->Geo;
-
-		// Skip invisible render-items.
-		if (ri->Visible == false)
-			continue;
-
-		XMMATRIX W = XMLoadFloat4x4(&ri->World);
-		XMMATRIX invWorld = XMMatrixInverse(&XMMatrixDeterminant(W), W);
-
-		//rayOrigin = XMVector3TransformCoord(rayOrigin, invWorld);
-		//rayDir = XMVector3TransformNormal(rayDir, invWorld);
-
-		//// Tranform ray to vi space of Mesh.
-		//XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
-
-		XMVECTOR newrayOrigin = XMVector3TransformCoord(rayOrigin, invWorld);
-		XMVECTOR newrayDir = XMVector3TransformNormal(rayDir, invWorld);
-
-		// Make the ray direction unit length for the intersection tests.
-		newrayDir = XMVector3Normalize(newrayDir);
-
-		// If we hit the bounding box of the Mesh, then we might have picked a Mesh triangle,
-		// so do the ray/triangle tests.
-		//
-		// If we did not hit the bounding box, then it is impossible that we hit 
-		// the Mesh, so do not waste effort doing ray/triangle tests.
-		float distance = 0.0f;
-		if (ri->Bounds.Intersects(newrayOrigin, newrayDir, distance))
-		{
-			if (distance < tmax)
-			{
-				tmax = distance;
-
-				mPickedRitem->Visible = true;
-
-				// Picked render item needs same world matrix as object picked.
-				mPickedRitem->Geo = ri->Geo;
-				mPickedRitem->World = ri->World;
-				mPickedRitem->TexTransform = ri->TexTransform;
-				mPickedRitem->NumFramesDirty = gNumFrameResources;
-
-				// Offset to the picked triangle in the mesh index buffer.
-				mPickedRitem->IndexCount = ri->IndexCount;
-				mPickedRitem->BaseVertexLocation = ri->BaseVertexLocation;
-				mPickedRitem->StartIndexLocation = ri->StartIndexLocation;
-			}
-
-		}
-	}
-}
 
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> Engine::GetStaticSamplers()
 {
@@ -2517,7 +1609,7 @@ void Engine::ImguiInitialize()
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	ImGui_ImplWin32_Init(D3DApp::MainWnd());
-	ImGui_ImplDX12_Init(D3DApp::md3dDevice.Get(), gNumFrameResources,
+	ImGui_ImplDX12_Init(md3dDevice.Get(), gNumFrameResources,
 		DXGI_FORMAT_R8G8B8A8_UNORM, mSrvDescriptorHeap.Get(),
 		mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());

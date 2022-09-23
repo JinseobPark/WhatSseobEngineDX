@@ -10,15 +10,19 @@
 #include "Imgui/imgui.h"
 #include "Imgui/imgui_impl_dx12.h"
 #include "Imgui/imgui_impl_win32.h"
-#include "Texture/CubeRenderTarget.h"
-#include "Texture/ShadowMap.h"
-#include "Texture/Ssao.h"
+#include "Targets/CubeRenderTarget.h"
+#include "Targets/ShadowMap.h"
+#include "Targets/Ssao.h"
+#include "Object/Texture/Textures.h"
+#include "Object/Texture/Materials.h"
+#include "Object/Geometries.h"
+#include "Object/RenderItems.h"
+#include "Shaders.h"
 #include "Datas.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
-
 
 
 class Engine : public D3DApp
@@ -52,27 +56,21 @@ private:
 	void UpdateSsaoCB(const GameTimer& gt);
 	//void UpdateReflectedPassCB(const GameTimer& gt);
 
-	void LoadTextures();
 	void BuildRootSignature();
 	void BuildSsaoRootSignature();
 	void BuildDescriptorHeaps();
 	//void BuildCubeDepthStencil();
-	void BuildShadersAndInputLayout();
-	void BuildShapeGeometry();
-	void BuildTreeSpritesGeometry();
-	void BuildCarGeometry();
 
 	void BuildPSOs();
 	void BuildFrameResources();
-	void BuildMaterials();
 
-	void BuildRenderItems();
-	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+	//void BuildRenderItems();
+	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 	//void DrawSceneToCubeMap();
 	void DrawSceneToShadowMap();
 	void DrawNormalsAndDepth();
 
-	void Pick(int sx, int sy);
+	//void Pick(int sx, int sy);
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers();
 	//void BuildCubeFaceCamera(float x, float y, float z);
 
@@ -100,21 +98,21 @@ private:
 
 	ComPtr<ID3D12Resource> mCubeDepthStencilBuffer;
 
-	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
-	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
-	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
-	std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
+	//std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 
-	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> mTreeSpriteInputLayout;
+	std::unique_ptr<GeoMetryClass> mGeometries;
+	std::unique_ptr<TextureClass> mTextures;
+	std::unique_ptr<MaterialClass> mMaterials;
+	std::unique_ptr<ShaderClass> mShaders;
 
-	// List of all the render items.
-	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+	std::unique_ptr<RenderItemClass> mRenderItems;
 
-	// Render items divided by PSO.
-	// Render items divided by PSO.
-	std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
+	//// List of all the render items.
+	//std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+
+	//// Render items divided by PSO.
+	//std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
 
 
 	RenderItem* mPickedRitem = nullptr;

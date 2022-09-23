@@ -4,7 +4,9 @@
 #include "MathHelper.h"
 #include "UploadBuffer.h"
 #include "../Object/Object.h"
+#include "../Object/Geometries.h"
 
+#define MaxLights 16
 
 struct ObjectConstants
 {
@@ -83,13 +85,13 @@ struct MaterialData
     UINT MaterialPad2;
 };
 
-struct Vertex
-{
-    DirectX::XMFLOAT3 Pos;
-    DirectX::XMFLOAT3 Normal;
-    DirectX::XMFLOAT2 TexC;
-    DirectX::XMFLOAT3 TangentU = DirectX::XMFLOAT3(0, 0, 0);
-};
+//struct Vertex
+//{
+//    DirectX::XMFLOAT3 Pos;
+//    DirectX::XMFLOAT3 Normal;
+//    DirectX::XMFLOAT2 TexC;
+//    DirectX::XMFLOAT3 TangentU = DirectX::XMFLOAT3(0, 0, 0);
+//};
 
 // Stores the resources needed for the CPU to build the command lists
 // for a frame.  

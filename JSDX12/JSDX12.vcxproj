@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="src\Datas.h" />
     <ClInclude Include="src\DirectX\FrameResource.h" />
+    <ClInclude Include="src\DirectX\Shaders.h" />
     <ClInclude Include="src\Imgui\imconfig.h" />
     <ClInclude Include="src\Imgui\imgui.h" />
     <ClInclude Include="src\Imgui\imgui_impl_dx11.h" />
@@ -158,11 +159,15 @@
     <ClInclude Include="src\DirectX\d3dUtil.h" />
     <ClInclude Include="src\DirectX\d3dx12.h" />
     <ClInclude Include="src\DirectX\DDSTextureLoader.h" />
+    <ClInclude Include="src\Object\Geometries.h" />
     <ClInclude Include="src\Object\Object.h" />
     <ClInclude Include="src\Object\RenderItem.h" />
-    <ClInclude Include="src\Texture\CubeRenderTarget.h" />
-    <ClInclude Include="src\Texture\ShadowMap.h" />
-    <ClInclude Include="src\Texture\Ssao.h" />
+    <ClInclude Include="src\DirectX\Targets\CubeRenderTarget.h" />
+    <ClInclude Include="src\Object\RenderItems.h" />
+    <ClInclude Include="src\Object\Texture\Materials.h" />
+    <ClInclude Include="src\DirectX\Targets\ShadowMap.h" />
+    <ClInclude Include="src\DirectX\Targets\Ssao.h" />
+    <ClInclude Include="src\Object\Texture\Textures.h" />
     <ClInclude Include="src\Util\DXDefine.h" />
     <ClInclude Include="src\Util\GameTimer.h" />
     <ClInclude Include="src\Object\GeometryGenerator.h" />
@@ -173,6 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DirectX\FrameResource.cpp" />
+    <ClCompile Include="src\DirectX\Shaders.cpp" />
     <ClCompile Include="src\Imgui\imgui.cpp" />
     <ClCompile Include="src\Imgui\imgui_draw.cpp" />
     <ClCompile Include="src\Imgui\imgui_impl_dx11.cpp" />
@@ -184,9 +190,13 @@
     <ClCompile Include="src\DirectX\d3dApp.cpp" />
     <ClCompile Include="src\DirectX\d3dUtil.cpp" />
     <ClCompile Include="src\DirectX\DDSTextureLoader.cpp" />
-    <ClCompile Include="src\Texture\CubeRenderTarget.cpp" />
-    <ClCompile Include="src\Texture\ShadowMap.cpp" />
-    <ClCompile Include="src\Texture\Ssao.cpp" />
+    <ClCompile Include="src\DirectX\Targets\CubeRenderTarget.cpp" />
+    <ClCompile Include="src\Object\Geometries.cpp" />
+    <ClCompile Include="src\Object\RenderItems.cpp" />
+    <ClCompile Include="src\Object\Texture\Materials.cpp" />
+    <ClCompile Include="src\DirectX\Targets\ShadowMap.cpp" />
+    <ClCompile Include="src\DirectX\Targets\Ssao.cpp" />
+    <ClCompile Include="src\Object\Texture\Textures.cpp" />
     <ClCompile Include="src\Util\GameTimer.cpp" />
     <ClCompile Include="src\Object\GeometryGenerator.cpp" />
     <ClCompile Include="src\Util\MathHelper.cpp" />
