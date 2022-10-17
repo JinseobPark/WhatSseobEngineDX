@@ -57,12 +57,12 @@ bool Engine::Initialize()
 	// Dynamic cube
 	// 
 	// 
-	/*
-	BuildCubeFaceCamera(0.0f, 2.0f, 0.0f);
+	
+	//BuildCubeFaceCamera(0.0f, 2.0f, 0.0f);
 
 	mDynamicCubeMap = std::make_unique<CubeRenderTarget>(md3dDevice.Get(),
 		CubeMapSize, CubeMapSize, DXGI_FORMAT_R8G8B8A8_UNORM);
-	*/
+	
 
 	mTextures->LoadTextures();
 	mMaterials->BuildMaterials();
@@ -73,7 +73,8 @@ bool Engine::Initialize()
 	//BuildCubeDepthStencil();
 	mShaders->BuildShadersAndInputLayout();
 	mGeometries->BuildGeomatries();
-	mRenderItems->BuildRenderItems( &mMaterials, &mGeometries);
+	//mRenderItems->BuildRenderItems(&mMaterials, &mGeometries);
+	mRenderItems->BuildRenderItemsFromJson( &mMaterials, &mGeometries);
 	BuildFrameResources();
 	BuildPSOs();
 
@@ -96,7 +97,8 @@ void Engine::CreateRtvAndDsvDescriptorHeaps()
 {
 	// Add +6 RTV for cube render target.
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-	rtvHeapDesc.NumDescriptors = SwapChainBufferCount +3;
+	rtvHeapDesc.NumDescriptors = SwapChainBufferCount + 3;
+	//rtvHeapDesc.NumDescriptors = SwapChainBufferCount +9;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;
@@ -106,6 +108,7 @@ void Engine::CreateRtvAndDsvDescriptorHeaps()
 	// Add +1 DSV for cube render target.
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 	dsvHeapDesc.NumDescriptors = 2;
+	//dsvHeapDesc.NumDescriptors = 3;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;
@@ -115,12 +118,12 @@ void Engine::CreateRtvAndDsvDescriptorHeaps()
 	//
 	// dynamic cube
 	//
-	/*
-	mCubeDSV = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		mDsvHeap->GetCPUDescriptorHandleForHeapStart(),
-		1,
-		mDsvDescriptorSize);
-	*/
+	
+	//mCubeDSV = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+	//	mDsvHeap->GetCPUDescriptorHandleForHeapStart(),
+	//	1,
+	//	mDsvDescriptorSize);
+	
 }
 
 void Engine::OnResize()
@@ -342,8 +345,14 @@ void Engine::Draw(const GameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["highlight"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Highlight, mCurrFrameResource);
 
-	mCommandList->SetPipelineState(mPSOs["debug"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Debug, mCurrFrameResource);
+	if (imguidata.isShowDebug)
+	{
+		mCommandList->SetPipelineState(mPSOs["shadow_debug"].Get());
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::ShadowDebug, mCurrFrameResource);
+
+		mCommandList->SetPipelineState(mPSOs["ssao_debug"].Get());
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::SsaoDebug, mCurrFrameResource);
+	}
 
 	mCommandList->SetPipelineState(mPSOs["sky"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Sky, mCurrFrameResource);
@@ -361,6 +370,7 @@ void Engine::Draw(const GameTimer& gt)
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+	ImguiUpdatePlatform();
 	// Swap the back and front buffers
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -390,8 +400,8 @@ void Engine::OnMouseDown(WPARAM btnState, int x, int y)
 		//Pick(x, y);
 	}
 
-	guidata.pickposition.x = x;
-	guidata.pickposition.y = y;
+	imguidata.pickposition.x = x;
+	imguidata.pickposition.y = y;
 
 }
 
@@ -581,9 +591,9 @@ void Engine::UpdateMainPassCB(const GameTimer& gt)
 	//
 	//	dynamic cube
 	//
-	/*
-	UpdateCubeMapFacePassCBs();
-	*/
+	
+	//UpdateCubeMapFacePassCBs();
+	
 }
 
 //void Engine::UpdateReflectedPassCB(const GameTimer& gt)
@@ -609,7 +619,7 @@ void Engine::UpdateMainPassCB(const GameTimer& gt)
 //
 //	dynamic cubes
 //
-/*
+
 void Engine::UpdateCubeMapFacePassCBs()
 {
 	for (int i = 0; i < 6; ++i)
@@ -640,7 +650,7 @@ void Engine::UpdateCubeMapFacePassCBs()
 		currPassCB->CopyData(1 + i, cubeFacePassCB);
 	}
 }
-*/
+
 
 
 void Engine::UpdateShadowPassCB(const GameTimer& gt)
@@ -973,7 +983,7 @@ void Engine::BuildDescriptorHeaps()
 //
 //	dynamic cube
 //
-/*
+
 void Engine::BuildCubeDepthStencil()
 {
 	// Create the depth/stencil buffer and view.
@@ -1009,7 +1019,7 @@ void Engine::BuildCubeDepthStencil()
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mCubeDepthStencilBuffer.Get(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 }
-*/
+
 
 void Engine::BuildPSOs()
 {
@@ -1269,15 +1279,29 @@ void Engine::BuildPSOs()
 	debugPsoDesc.pRootSignature = mRootSignature.Get();
 	debugPsoDesc.VS =
 	{
-		reinterpret_cast<BYTE*>(mShaders->GetShader("debugVS")->GetBufferPointer()),
-		mShaders->GetShader("debugVS")->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugshadowVS")->GetBufferPointer()),
+		mShaders->GetShader("debugshadowVS")->GetBufferSize()
 	};
 	debugPsoDesc.PS =
 	{
-		reinterpret_cast<BYTE*>(mShaders->GetShader("debugPS")->GetBufferPointer()),
-		mShaders->GetShader("debugPS")->GetBufferSize()
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugshadowPS")->GetBufferPointer()),
+		mShaders->GetShader("debugshadowPS")->GetBufferSize()
 	};
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&debugPsoDesc, IID_PPV_ARGS(&mPSOs["debug"])));
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&debugPsoDesc, IID_PPV_ARGS(&mPSOs["shadow_debug"])));
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC debugSsaoPsoDesc = basePsoDesc;
+	debugSsaoPsoDesc.pRootSignature = mRootSignature.Get();
+	debugSsaoPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugSsaoVS")->GetBufferPointer()),
+		mShaders->GetShader("debugSsaoVS")->GetBufferSize()
+	};
+	debugSsaoPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("debugSsaoPS")->GetBufferPointer()),
+		mShaders->GetShader("debugSsaoPS")->GetBufferSize()
+	};
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&debugSsaoPsoDesc, IID_PPV_ARGS(&mPSOs["ssao_debug"])));
 
 	//
 	// PSO for drawing normals.
@@ -1348,14 +1372,14 @@ void Engine::BuildFrameResources()
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
 		mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-			2, (UINT)mRenderItems->GetAllRiems().size(), (UINT)mMaterials->GetMaterialSize()));
+			8, (UINT)mRenderItems->GetAllRiems().size(), (UINT)mMaterials->GetMaterialSize()));
 	}
 }
 
 //
 //	dynamic cube
 //
-/*
+
 void Engine::DrawSceneToCubeMap()
 {
 	mCommandList->RSSetViewports(1, &mDynamicCubeMap->Viewport());
@@ -1384,10 +1408,10 @@ void Engine::DrawSceneToCubeMap()
 		D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + (1 + i) * passCBByteSize;
 		mCommandList->SetGraphicsRootConstantBufferView(1, passCBAddress);
 
-		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
 
 		mCommandList->SetPipelineState(mPSOs["sky"].Get());
-		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Sky, mCurrFrameResource);
 
 		mCommandList->SetPipelineState(mPSOs["opaque"].Get());
 	}
@@ -1396,7 +1420,7 @@ void Engine::DrawSceneToCubeMap()
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDynamicCubeMap->Resource(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 }
-*/
+
 
 void Engine::DrawSceneToShadowMap()
 {
@@ -1536,7 +1560,7 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> Engine::GetStaticSamplers()
 //
 //	dynamic cube
 //
-/*
+
 void Engine::BuildCubeFaceCamera(float x, float y, float z)
 {
 	// Generate the cube map about the given position.
@@ -1573,7 +1597,7 @@ void Engine::BuildCubeFaceCamera(float x, float y, float z)
 		mCubeMapCamera[i].UpdateViewMatrix();
 	}
 }
-*/
+
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE Engine::GetCpuSrv(int index)const
 {
@@ -1608,12 +1632,26 @@ void Engine::ImguiInitialize()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / 
+
+	ImGui::StyleColorsDark();
+
+	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+	ImGuiStyle& style = ImGui::GetStyle();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
+
 	ImGui_ImplWin32_Init(D3DApp::MainWnd());
 	ImGui_ImplDX12_Init(md3dDevice.Get(), gNumFrameResources,
 		DXGI_FORMAT_R8G8B8A8_UNORM, mSrvDescriptorHeap.Get(),
 		mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	ImGui::StyleColorsDark();
 }
 
 void Engine::ImguiLoadInfo()
@@ -1624,7 +1662,7 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 {
 	// Our state
 	bool show_demo_window = true;
-	bool show_another_window = false;
+	bool show_another_window = imguidata.isSelected;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	ImGui_ImplDX12_NewFrame();
@@ -1643,8 +1681,8 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		XMFLOAT4X4 P = mCamera.GetProj4x4f();
 
 		// Compute picking ray in view space.
-		float vx = (+2.0f * guidata.pickposition.x / mClientWidth - 1.0f) / P(0, 0);
-		float vy = (-2.0f * guidata.pickposition.y / mClientHeight + 1.0f) / P(1, 1);
+		float vx = (+2.0f * imguidata.pickposition.x / mClientWidth - 1.0f) / P(0, 0);
+		float vy = (-2.0f * imguidata.pickposition.y / mClientHeight + 1.0f) / P(1, 1);
 
 		XMMATRIX V = mCamera.GetView();
 		XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(V), V);
@@ -1653,12 +1691,14 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
+
+		ImGui::Checkbox("Debug", &imguidata.isShowDebug);
+		ImGui::Checkbox("selected", &imguidata.isSelected);
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-		ImGui::Text("Mouse Mover : %.1f , %.1f ", guidata.pickposition.x, guidata.pickposition.y);
+		ImGui::Text("Mouse Mover : %.1f , %.1f ", imguidata.pickposition.x, imguidata.pickposition.y);
 		ImGui::Text("Mouse Mover vx vy : %.1f , %.1f ", vx, vy);
 		ImGui::Text("Mouse Mover P : %.1f , %.1f ", P(0, 0), P(1, 1));
 
@@ -1671,17 +1711,31 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		ImGui::End();
 	}
 
-	// 3. Show another simple window.
-	if (show_another_window)
+
+	if (imguidata.isSelected)
 	{
-		ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-		ImGui::Text("Hello from another window!");
+		ImGui::Begin("Selected Object", &imguidata.isSelected);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		ImGui::Checkbox("visible", &imguidata.pickedData.isVisible);
 		if (ImGui::Button("Close Me"))
-			show_another_window = false;
+			imguidata.isSelected = false;
 		ImGui::End();
 	}
 	// Rendering
 	ImGui::Render();
+
+
+}
+
+void Engine::ImguiUpdatePlatform()
+{
+
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	// Update and Render additional Platform Windows
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault(NULL, (void*)mCommandList.Get());
+	}
 }
 
 void Engine::ImguiShutdown()

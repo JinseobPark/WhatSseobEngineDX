@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "d3dApp.h"
 #include <WindowsX.h>
-#include "../Imgui/imgui.h"
+#include "Imgui/imgui.h"
+#include "Imgui/imgui_impl_win32.h"
+#include "Imgui/imgui_impl_dx12.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -159,6 +161,7 @@ void D3DApp::OnResize()
 		mBackBufferFormat, 
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
+
 	mCurrBackBuffer = 0;
  
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -231,6 +234,7 @@ void D3DApp::OnResize()
 	mScreenViewport.MaxDepth = 1.0f;
 
     mScissorRect = { 0, 0, mClientWidth, mClientHeight };
+
 }
  
 
@@ -247,21 +251,23 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	// WM_ACTIVATE is sent when the window is activated or deactivated.  
 	// We pause the game when the window is deactivated and unpause it 
 	// when it becomes active.  
-	case WM_ACTIVATE:
-		if( LOWORD(wParam) == WA_INACTIVE )
-		{
-			mAppPaused = true;
-			mTimer.Stop();
-		}
-		else
-		{
-			mAppPaused = false;
-			mTimer.Start();
-		}
-		return 0;
+	
+	//case WM_ACTIVATE:
+	//	if( LOWORD(wParam) == WA_INACTIVE )
+	//	{
+	//		mAppPaused = true;
+	//		mTimer.Stop();
+	//	}
+	//	else
+	//	{
+	//		mAppPaused = false;
+	//		mTimer.Start();
+	//	}
+	//	return 0;
 
 	// WM_SIZE is sent when the user resizes the window.  
 	case WM_SIZE:
+		ImGui_ImplDX12_InvalidateDeviceObjects();
 		// Save the new client area dimensions.
 		mClientWidth  = LOWORD(lParam);
 		mClientHeight = HIWORD(lParam);
@@ -314,6 +320,8 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					OnResize();
 				}
 			}
+
+			ImGui_ImplDX12_CreateDeviceObjects();
 		}
 		return 0;
 

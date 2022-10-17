@@ -9,6 +9,7 @@
 //#include "../Object/Object.h"
 #include "DDSTextureLoader.h"
 #include "MathHelper.h"
+#include "Vector3.h"
 
 extern const int gNumFrameResources;
 
@@ -40,6 +41,7 @@ inline std::wstring AnsiToWString(const std::string& str)
     MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, buffer, 512);
     return std::wstring(buffer);
 }
+
 
 /*
 #if defined(_DEBUG)

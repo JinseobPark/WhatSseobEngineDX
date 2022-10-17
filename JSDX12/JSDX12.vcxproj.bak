@@ -151,11 +151,18 @@
     <ClInclude Include="external\Imgui\imstb_rectpack.h" />
     <ClInclude Include="external\Imgui\imstb_textedit.h" />
     <ClInclude Include="external\Imgui\imstb_truetype.h" />
-    <ClInclude Include="external\json\json\json-forwards.h" />
-    <ClInclude Include="external\json\json\json.h" />
     <ClInclude Include="src\Datas.h" />
     <ClInclude Include="src\DirectX\FrameResource.h" />
     <ClInclude Include="src\DirectX\Shaders.h" />
+    <ClInclude Include="src\Imgui\imconfig.h" />
+    <ClInclude Include="src\Imgui\imgui.h" />
+    <ClInclude Include="src\Imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="src\Imgui\imgui_impl_dx12.h" />
+    <ClInclude Include="src\Imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\Imgui\imgui_internal.h" />
+    <ClInclude Include="src\Imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\Imgui\imstb_textedit.h" />
+    <ClInclude Include="src\Imgui\imstb_truetype.h" />
     <ClInclude Include="src\Object\Camera.h" />
     <ClInclude Include="src\DirectX\d3dApp.h" />
     <ClInclude Include="src\DirectX\d3dUtil.h" />
@@ -177,7 +184,6 @@
     <ClInclude Include="src\Util\MathHelper.h" />
     <ClInclude Include="src\DirectX\UploadBuffer.h" />
     <ClInclude Include="src\Util\stdafx.h" />
-    <ClInclude Include="src\Util\Vector3.h" />
     <ClInclude Include="src\WhatSseobEngine.h" />
   </ItemGroup>
   <ItemGroup>
@@ -188,7 +194,6 @@
     <ClCompile Include="external\Imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="external\Imgui\imgui_tables.cpp" />
     <ClCompile Include="external\Imgui\imgui_widgets.cpp" />
-    <ClCompile Include="external\json\jsoncpp.cpp" />
     <ClCompile Include="src\DirectX\FrameResource.cpp" />
     <ClCompile Include="src\DirectX\Shaders.cpp" />
     <ClCompile Include="src\Object\Camera.cpp" />
@@ -210,11 +215,7 @@
     <ClCompile Include="src\Util\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Util\Vector3.cpp" />
     <ClCompile Include="src\WhatSseobEngine.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

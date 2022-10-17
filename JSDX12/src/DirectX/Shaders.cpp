@@ -35,8 +35,11 @@ void ShaderClass::BuildShadersAndInputLayout()
 	shaderMap["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
 	shaderMap["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
-	shaderMap["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
-	shaderMap["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
+	shaderMap["debugshadowVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
+	shaderMap["debugshadowPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
+
+	shaderMap["debugSsaoVS"] = d3dUtil::CompileShader(L"Shaders\\SsaoDebug.hlsl", nullptr, "VS", "vs_5_1");
+	shaderMap["debugSsaoPS"] = d3dUtil::CompileShader(L"Shaders\\SsaoDebug.hlsl", nullptr, "PS", "ps_5_1");
 
 	shaderMap["drawNormalsVS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "VS", "vs_5_1");
 	shaderMap["drawNormalsPS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "PS", "ps_5_1");

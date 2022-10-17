@@ -50,7 +50,7 @@ private:
 	void UpdateObjectCBs(const GameTimer& gt);
 	void UpdateMaterialCBs(const GameTimer& gt);
 	void UpdateMainPassCB(const GameTimer& gt);
-	//void UpdateCubeMapFacePassCBs();
+	void UpdateCubeMapFacePassCBs();
 	void UpdateShadowTransform(const GameTimer& gt);
 	void UpdateShadowPassCB(const GameTimer& gt);
 	void UpdateSsaoCB(const GameTimer& gt);
@@ -59,20 +59,20 @@ private:
 	void BuildRootSignature();
 	void BuildSsaoRootSignature();
 	void BuildDescriptorHeaps();
-	//void BuildCubeDepthStencil();
+	void BuildCubeDepthStencil();
 
 	void BuildPSOs();
 	void BuildFrameResources();
 
 	//void BuildRenderItems();
 	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
-	//void DrawSceneToCubeMap();
+	void DrawSceneToCubeMap();
 	void DrawSceneToShadowMap();
 	void DrawNormalsAndDepth();
 
 	//void Pick(int sx, int sy);
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers();
-	//void BuildCubeFaceCamera(float x, float y, float z);
+	void BuildCubeFaceCamera(float x, float y, float z);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetCpuSrv(int index)const;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE GetGpuSrv(int index)const;
@@ -83,6 +83,7 @@ private:
 	void ImguiInitialize();
 	void ImguiLoadInfo();
 	void ImguiUpdate(const GameTimer& gt);
+	void ImguiUpdatePlatform();
 	void ImguiShutdown();
 private:
 
@@ -115,7 +116,7 @@ private:
 	//std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
 
 
-	RenderItem* mPickedRitem = nullptr;
+	//RenderItem* mPickedRitem = nullptr;
 
 	//UINT mInstanceCount = 0;
 	//bool mFrustumCullingEnabled = true;
@@ -131,9 +132,9 @@ private:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mNullSrv;
 
 	//About Dynamic cube
-	//UINT mDynamicTexHeapIndex = 0;
-	//std::unique_ptr<CubeRenderTarget> mDynamicCubeMap = nullptr;
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE mCubeDSV;
+	UINT mDynamicTexHeapIndex = 0;
+	std::unique_ptr<CubeRenderTarget> mDynamicCubeMap = nullptr;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE mCubeDSV;
 
 
 
@@ -164,9 +165,9 @@ private:
 	XMFLOAT3 mRotatedLightDirections[3];
 
 	Camera mCamera;
-	//Camera mCubeMapCamera[6];
+	Camera mCubeMapCamera[6];
 
 	POINT mLastMousePos;
 
-	ImguiData guidata;
+	//ImGuiIO io;
 };

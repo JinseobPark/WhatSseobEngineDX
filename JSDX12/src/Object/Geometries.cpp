@@ -26,7 +26,8 @@ void GeoMetryClass::BuildShapeGeometry()
 	GeometryGenerator::MeshData grid = geoGen.CreateGrid(1.0f, 1.0f, 60, 40);
 	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
 	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
-	GeometryGenerator::MeshData quad = geoGen.CreateQuad(0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+	GeometryGenerator::MeshData shadow_quad = geoGen.CreateQuad(-1.0f, -0.5f, 0.5f, 0.5f, 0.0f);
+	GeometryGenerator::MeshData ssao_quad = geoGen.CreateQuad(-0.5f, -0.5f, 0.5f, 0.5f, 0.0f);
 
 	XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
 	XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
@@ -43,14 +44,16 @@ void GeoMetryClass::BuildShapeGeometry()
 	UINT gridVertexOffset = (UINT)box.Vertices.size();
 	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
 	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
-	UINT quadVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
+	UINT shadow_quadVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
+	UINT ssao_quadVertexOffset = shadow_quadVertexOffset + (UINT)shadow_quad.Vertices.size();
 
 	// Cache the starting index for each object in the concatenated index buffer.
 	UINT boxIndexOffset = 0;
 	UINT gridIndexOffset = (UINT)box.Indices32.size();
 	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
 	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
-	UINT quadIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
+	UINT shadow_quadIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
+	UINT ssao_quadIndexOffset = shadow_quadIndexOffset + (UINT)shadow_quad.Indices32.size();
 
 	SubmeshGeometry boxSubmesh;
 	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
@@ -72,10 +75,15 @@ void GeoMetryClass::BuildShapeGeometry()
 	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
 	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
 
-	SubmeshGeometry quadSubmesh;
-	quadSubmesh.IndexCount = (UINT)quad.Indices32.size();
-	quadSubmesh.StartIndexLocation = quadIndexOffset;
-	quadSubmesh.BaseVertexLocation = quadVertexOffset;
+	SubmeshGeometry shadow_quadSubmesh;
+	shadow_quadSubmesh.IndexCount = (UINT)shadow_quad.Indices32.size();
+	shadow_quadSubmesh.StartIndexLocation = shadow_quadIndexOffset;
+	shadow_quadSubmesh.BaseVertexLocation = shadow_quadVertexOffset;
+
+	SubmeshGeometry ssao_quadSubmesh;
+	ssao_quadSubmesh.IndexCount = (UINT)ssao_quad.Indices32.size();
+	ssao_quadSubmesh.StartIndexLocation = ssao_quadIndexOffset;
+	ssao_quadSubmesh.BaseVertexLocation = ssao_quadVertexOffset;
 	//
 	// Extract the vertex elements we are interested in and pack the
 	// vertices of all the meshes into one vertex buffer.
@@ -86,7 +94,8 @@ void GeoMetryClass::BuildShapeGeometry()
 		grid.Vertices.size() +
 		sphere.Vertices.size() +
 		cylinder.Vertices.size() +
-		quad.Vertices.size();
+		shadow_quad.Vertices.size() +
+		ssao_quad.Vertices.size();
 
 	std::vector<Vertex> vertices(totalVertexCount);
 
@@ -155,20 +164,35 @@ void GeoMetryClass::BuildShapeGeometry()
 	vMin = XMLoadFloat3(&vMinf3);
 	vMax = XMLoadFloat3(&vMaxf3);
 
-	for (int i = 0; i < quad.Vertices.size(); ++i, ++k)
+	for (int i = 0; i < shadow_quad.Vertices.size(); ++i, ++k)
 	{
-		vertices[k].Pos = quad.Vertices[i].Position;
-		vertices[k].Normal = quad.Vertices[i].Normal;
-		vertices[k].TexC = quad.Vertices[i].TexC;
-		vertices[k].TangentU = quad.Vertices[i].TangentU;
+		vertices[k].Pos = shadow_quad.Vertices[i].Position;
+		vertices[k].Normal = shadow_quad.Vertices[i].Normal;
+		vertices[k].TexC = shadow_quad.Vertices[i].TexC;
+		vertices[k].TangentU = shadow_quad.Vertices[i].TangentU;
 
 		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
 		vMin = XMVectorMin(vMin, P);
 		vMax = XMVectorMax(vMax, P);
 	}
-	XMStoreFloat3(&quadSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&quadSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
+	XMStoreFloat3(&shadow_quadSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&shadow_quadSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
+	vMin = XMLoadFloat3(&vMinf3);
+	vMax = XMLoadFloat3(&vMaxf3);
 
+	for (int i = 0; i < ssao_quad.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = ssao_quad.Vertices[i].Position;
+		vertices[k].Normal = ssao_quad.Vertices[i].Normal;
+		vertices[k].TexC = ssao_quad.Vertices[i].TexC;
+		vertices[k].TangentU = ssao_quad.Vertices[i].TangentU;
+
+		XMVECTOR P = XMLoadFloat3(&vertices[k].Pos);
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+	XMStoreFloat3(&ssao_quadSubmesh.Bounds.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&ssao_quadSubmesh.Bounds.Extents, 0.5f * (vMax - vMin));
 
 
 	std::vector<std::uint16_t> indices;
@@ -176,7 +200,8 @@ void GeoMetryClass::BuildShapeGeometry()
 	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
 	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
 	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
-	indices.insert(indices.end(), std::begin(quad.GetIndices16()), std::end(quad.GetIndices16()));
+	indices.insert(indices.end(), std::begin(shadow_quad.GetIndices16()), std::end(shadow_quad.GetIndices16()));
+	indices.insert(indices.end(), std::begin(ssao_quad.GetIndices16()), std::end(ssao_quad.GetIndices16()));
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
@@ -205,7 +230,8 @@ void GeoMetryClass::BuildShapeGeometry()
 	geo->DrawArgs["grid"] = gridSubmesh;
 	geo->DrawArgs["sphere"] = sphereSubmesh;
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
-	geo->DrawArgs["quad"] = quadSubmesh;
+	geo->DrawArgs["shadow_quad"] = shadow_quadSubmesh;
+	geo->DrawArgs["ssao_quad"] = ssao_quadSubmesh;
 
 	geometryMap[geo->Name] = std::move(geo);
 }

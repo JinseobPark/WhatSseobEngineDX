@@ -1,8 +1,17 @@
 #include "stdafx.h"
 #include "RenderItems.h"
+#include <string>
 
 RenderItemClass::RenderItemClass()
 {
+	mJson = new JsonClass();
+	mJson->JsonReadTest();
+	mJson->JsonTest();
+}
+
+RenderItemClass::~RenderItemClass()
+{
+	delete mJson;
 }
 
 void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
@@ -10,58 +19,103 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	UINT objCBIndex = 0;
 
 	auto skyRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
-	skyRitem->TexTransform = MathHelper::Identity4x4();
+	skyRitem->name = "skybox";
+	skyRitem->wScale = Vector3(5000.0f, 5000.0f, 5000.0f);
+	XMStoreFloat4x4(&skyRitem->World, MakeMatrixWorld(skyRitem->wRot, skyRitem->wScale, skyRitem->wTrans));
+	XMStoreFloat4x4(&skyRitem->TexTransform, MakeMatrixTex(skyRitem->TexScale));
+	//XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(skyRitem->wScale.x, skyRitem->wScale.y, skyRitem->wScale.z));
+	//skyRitem->TexTransform = MathHelper::Identity4x4();
 	skyRitem->ObjCBIndex = objCBIndex++;
 	skyRitem->Mat = materials->get()->GetMaterial("sky");
 	skyRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
-	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	skyRitem->IndexCount = skyRitem->Geo->DrawArgs["sphere"].IndexCount;
-	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;	
+	skyRitem->SubmeshName = "sphere";
+	skyRitem->IndexCount = skyRitem->Geo->DrawArgs[skyRitem->SubmeshName].IndexCount;
+	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs[skyRitem->SubmeshName].StartIndexLocation;
+	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs[skyRitem->SubmeshName].BaseVertexLocation;
+	skyRitem->mLayer = RenderLayer::Sky;
 
-	mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
+	mRitemLayer[(int)skyRitem->mLayer].push_back(skyRitem.get());
 	mAllRitems.push_back(std::move(skyRitem));
 
 	auto quadRitem = std::make_unique<RenderItem>();
-	quadRitem->World = MathHelper::Identity4x4();
-	quadRitem->TexTransform = MathHelper::Identity4x4();
+	quadRitem->name = "shadowDebugWindow";
+	XMStoreFloat4x4(&quadRitem->World, MakeMatrixWorld(quadRitem->wRot, quadRitem->wScale, quadRitem->wTrans));
+	XMStoreFloat4x4(&quadRitem->TexTransform, MakeMatrixTex(quadRitem->TexScale));
+	//quadRitem->World = MathHelper::Identity4x4();
+	//quadRitem->TexTransform = MathHelper::Identity4x4();
 	quadRitem->ObjCBIndex = objCBIndex++;
 	quadRitem->Mat = materials->get()->GetMaterial("bricks0");
 	quadRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 	quadRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	quadRitem->IndexCount = quadRitem->Geo->DrawArgs["quad"].IndexCount;
-	quadRitem->StartIndexLocation = quadRitem->Geo->DrawArgs["quad"].StartIndexLocation;
-	quadRitem->BaseVertexLocation = quadRitem->Geo->DrawArgs["quad"].BaseVertexLocation;
+	quadRitem->SubmeshName = "shadow_quad";
+	quadRitem->IndexCount = quadRitem->Geo->DrawArgs[quadRitem->SubmeshName].IndexCount;
+	quadRitem->StartIndexLocation = quadRitem->Geo->DrawArgs[quadRitem->SubmeshName].StartIndexLocation;
+	quadRitem->BaseVertexLocation = quadRitem->Geo->DrawArgs[quadRitem->SubmeshName].BaseVertexLocation;
+	quadRitem->mLayer = RenderLayer::ShadowDebug;
 
-	mRitemLayer[(int)RenderLayer::Debug].push_back(quadRitem.get());
+	mRitemLayer[(int)quadRitem->mLayer].push_back(quadRitem.get());
 	mAllRitems.push_back(std::move(quadRitem));
 
+	auto quadRitem2 = std::make_unique<RenderItem>();
+	quadRitem2->name = "ssaoDebugWindow";
+	XMStoreFloat4x4(&quadRitem2->World, MakeMatrixWorld(quadRitem2->wRot, quadRitem2->wScale, quadRitem2->wTrans));
+	XMStoreFloat4x4(&quadRitem2->TexTransform, MakeMatrixTex(quadRitem2->TexScale));
+	//quadRitem2->World = MathHelper::Identity4x4();
+	//quadRitem2->TexTransform = MathHelper::Identity4x4();
+	quadRitem2->ObjCBIndex = objCBIndex++;
+	quadRitem2->Mat = materials->get()->GetMaterial("bricks0");
+	quadRitem2->Geo = geometries->get()->GetGeometry("shapeGeo");
+	quadRitem2->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	quadRitem2->SubmeshName = "ssao_quad";
+	quadRitem2->IndexCount = quadRitem2->Geo->DrawArgs[quadRitem2->SubmeshName].IndexCount;
+	quadRitem2->StartIndexLocation = quadRitem2->Geo->DrawArgs[quadRitem2->SubmeshName].StartIndexLocation;
+	quadRitem2->BaseVertexLocation = quadRitem2->Geo->DrawArgs[quadRitem2->SubmeshName].BaseVertexLocation;
+	quadRitem2->mLayer = RenderLayer::SsaoDebug;
+
+	mRitemLayer[(int)quadRitem2->mLayer].push_back(quadRitem2.get());
+	mAllRitems.push_back(std::move(quadRitem2));
+
 	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
+	boxRitem->name = "centerbox";
+	boxRitem->wScale = Vector3(2.0f, 2.0f, 2.0f);
+	boxRitem->wTrans = Vector3(0.0f, 1.2f, 0.0f);
+	XMStoreFloat4x4(&boxRitem->World, MakeMatrixWorld(boxRitem->wRot, boxRitem->wScale, boxRitem->wTrans));
+	XMStoreFloat4x4(&boxRitem->TexTransform, MakeMatrixTex(boxRitem->TexScale));
+	//XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 1.2f, 0.0f));
+	//XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	boxRitem->ObjCBIndex = objCBIndex++;
 	boxRitem->Mat = materials->get()->GetMaterial("mirror0");
 	boxRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
+	boxRitem->SubmeshName = "box";
+	boxRitem->IndexCount = boxRitem->Geo->DrawArgs[boxRitem->SubmeshName].IndexCount;
+	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs[boxRitem->SubmeshName].StartIndexLocation;
+	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs[boxRitem->SubmeshName].BaseVertexLocation;
+	boxRitem->mLayer = RenderLayer::Opaque;
 
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
+	mRitemLayer[(int)boxRitem->mLayer].push_back(boxRitem.get());
 	mAllRitems.push_back(std::move(boxRitem));
 
 	auto gridRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(20.0f, 0.1f, 30.0f));
-	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
+	gridRitem->name = "grid";
+	gridRitem->wScale = Vector3(20.0f, 0.1f, 30.0f);
+	gridRitem->TexScale = Vector3(8.0f, 8.0f, 1.0f);
+	XMStoreFloat4x4(&gridRitem->World, MakeMatrixWorld(gridRitem->wRot, gridRitem->wScale, gridRitem->wTrans));
+	XMStoreFloat4x4(&gridRitem->TexTransform, MakeMatrixTex(gridRitem->TexScale));
+	//XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(20.0f, 0.1f, 30.0f));
+	//XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
 	gridRitem->ObjCBIndex = objCBIndex++;
 	gridRitem->Mat = materials->get()->GetMaterial("tile0");
 	gridRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
-	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
+	gridRitem->SubmeshName = "grid";
+	gridRitem->IndexCount = gridRitem->Geo->DrawArgs[gridRitem->SubmeshName].IndexCount;
+	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs[gridRitem->SubmeshName].StartIndexLocation;
+	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs[gridRitem->SubmeshName].BaseVertexLocation;
+	gridRitem->mLayer = RenderLayer::Opaque;
+
+	mRitemLayer[(int)gridRitem->mLayer].push_back(gridRitem.get());
 	mAllRitems.push_back(std::move(gridRitem));
 
 	XMMATRIX brickTexTransform = XMMatrixScaling(1.0f, 1.0f, 1.0f);
@@ -78,50 +132,80 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		XMMATRIX leftSphereWorld = XMMatrixTranslation(-5.0f, 3.5f, -10.0f + i * 5.0f);
 		XMMATRIX rightSphereWorld = XMMatrixTranslation(+5.0f, 3.5f, -10.0f + i * 5.0f);
 
-		XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
-		XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
+		leftCylRitem->name = "leftCy" + std::to_string(i);
+		leftCylRitem->wTrans = Vector3(-5.0f, 1.5f, -10.0f + i * 5.0f);
+		XMStoreFloat4x4(&leftCylRitem->World, MakeMatrixWorld(leftCylRitem->wRot, leftCylRitem->wScale, leftCylRitem->wTrans));
+		XMStoreFloat4x4(&leftCylRitem->TexTransform, MakeMatrixTex(leftCylRitem->TexScale));
+		//XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
+		//XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
 		leftCylRitem->ObjCBIndex = objCBIndex++;
 		leftCylRitem->Mat = materials->get()->GetMaterial("bricks1");
 		leftCylRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 		leftCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+		leftCylRitem->SubmeshName = "cylinder";
+		leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs[leftCylRitem->SubmeshName].IndexCount;
+		leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs[leftCylRitem->SubmeshName].StartIndexLocation;
+		leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs[leftCylRitem->SubmeshName].BaseVertexLocation;
+		leftCylRitem->mLayer = RenderLayer::Opaque;
 
-		XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
-		XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
+		rightCylRitem->name = "rightCy" + std::to_string(i);
+		rightCylRitem->wTrans = Vector3(+5.0f, 1.5f, -10.0f + i * 5.0f);
+		XMStoreFloat4x4(&rightCylRitem->World, MakeMatrixWorld(rightCylRitem->wRot, rightCylRitem->wScale, rightCylRitem->wTrans));
+		XMStoreFloat4x4(&rightCylRitem->TexTransform, MakeMatrixTex(rightCylRitem->TexScale));
+		//XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
+		//XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
 		rightCylRitem->ObjCBIndex = objCBIndex++;
 		rightCylRitem->Mat = materials->get()->GetMaterial("bricks0");
 		rightCylRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 		rightCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+		rightCylRitem->SubmeshName = "cylinder";
+		rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs[rightCylRitem->SubmeshName].IndexCount;
+		rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs[rightCylRitem->SubmeshName].StartIndexLocation;
+		rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs[rightCylRitem->SubmeshName].BaseVertexLocation;
+		rightCylRitem->mLayer = RenderLayer::Opaque;
 
-		XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
-		leftSphereRitem->TexTransform = MathHelper::Identity4x4();
+
+		leftSphereRitem->name = "leftSphere" + std::to_string(i);
+		leftSphereRitem->wTrans = Vector3(-5.0f, 3.5f, -10.0f + i * 5.0f);
+		XMStoreFloat4x4(&leftSphereRitem->World, MakeMatrixWorld(leftSphereRitem->wRot, leftSphereRitem->wScale, leftSphereRitem->wTrans));
+		XMStoreFloat4x4(&leftSphereRitem->TexTransform, MakeMatrixTex(leftSphereRitem->TexScale));
+		//XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
+		//leftSphereRitem->TexTransform = MathHelper::Identity4x4();
 		leftSphereRitem->ObjCBIndex = objCBIndex++;
 		leftSphereRitem->Mat = materials->get()->GetMaterial("stone0");
 		leftSphereRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 		leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		leftSphereRitem->SubmeshName = "sphere";
+		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs[leftSphereRitem->SubmeshName].IndexCount;
+		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs[leftSphereRitem->SubmeshName].StartIndexLocation;
+		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs[leftSphereRitem->SubmeshName].BaseVertexLocation;
+		leftSphereRitem->mLayer = RenderLayer::Transparent;
 
-		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
-		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
+		rightSphereRitem->name = "rightSphere" + std::to_string(i);
+		rightSphereRitem->wTrans = Vector3(+5.0f, 3.5f, -10.0f + i * 5.0f);
+		XMStoreFloat4x4(&rightSphereRitem->World, MakeMatrixWorld(rightSphereRitem->wRot, rightSphereRitem->wScale, rightSphereRitem->wTrans));
+		XMStoreFloat4x4(&rightSphereRitem->TexTransform, MakeMatrixTex(rightSphereRitem->TexScale));
+		//XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
+		//rightSphereRitem->TexTransform = MathHelper::Identity4x4();
 		rightSphereRitem->ObjCBIndex = objCBIndex++;
 		rightSphereRitem->Mat = materials->get()->GetMaterial("mirror0");
 		rightSphereRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
 		rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+		rightSphereRitem->SubmeshName = "sphere";
+		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs[rightSphereRitem->SubmeshName].IndexCount;
+		rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs[rightSphereRitem->SubmeshName].StartIndexLocation;
+		rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs[rightSphereRitem->SubmeshName].BaseVertexLocation;
+		rightSphereRitem->mLayer = RenderLayer::Opaque;
 
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Transparent].push_back(leftSphereRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
+		mRitemLayer[(int)leftCylRitem->mLayer].push_back(leftCylRitem.get());
+		mRitemLayer[(int)rightCylRitem->mLayer].push_back(rightCylRitem.get());
+		mRitemLayer[(int)leftSphereRitem->mLayer].push_back(leftSphereRitem.get());
+		mRitemLayer[(int)rightSphereRitem->mLayer].push_back(rightSphereRitem.get());
+
+		//mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
+		//mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
+		//mRitemLayer[(int)RenderLayer::Transparent].push_back(leftSphereRitem.get());
+		//mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
 
 		mAllRitems.push_back(std::move(leftCylRitem));
 		mAllRitems.push_back(std::move(rightCylRitem));
@@ -130,16 +214,21 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	}
 
 	auto treeSpritesRitem = std::make_unique<RenderItem>();
-	treeSpritesRitem->World = MathHelper::Identity4x4();
+	XMStoreFloat4x4(&treeSpritesRitem->World, MakeMatrixWorld(treeSpritesRitem->wRot, treeSpritesRitem->wScale, treeSpritesRitem->wTrans));
+	XMStoreFloat4x4(&treeSpritesRitem->TexTransform, MakeMatrixTex(treeSpritesRitem->TexScale));
+	//treeSpritesRitem->World = MathHelper::Identity4x4();
+	treeSpritesRitem->name = "tree";
 	treeSpritesRitem->ObjCBIndex = objCBIndex++;
 	treeSpritesRitem->Mat = materials->get()->GetMaterial("tile0");
 	treeSpritesRitem->Geo = geometries->get()->GetGeometry("treeSpritesGeo");
 	treeSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
-	treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
-	treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
+	treeSpritesRitem->SubmeshName = "points";
+	treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs[treeSpritesRitem->SubmeshName].IndexCount;
+	treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs[treeSpritesRitem->SubmeshName].StartIndexLocation;
+	treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs[treeSpritesRitem->SubmeshName].BaseVertexLocation;
+	treeSpritesRitem->mLayer = RenderLayer::AlphaTestedTreeSprites;
 
-	mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
+	mRitemLayer[(int)treeSpritesRitem->mLayer].push_back(treeSpritesRitem.get());
 	mAllRitems.push_back(std::move(treeSpritesRitem));
 
 	//
@@ -147,36 +236,77 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	//
 
 	auto carRitem2 = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&carRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(-5.0f, 2.0f, 0.0f));
-	XMStoreFloat4x4(&carRitem2->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
+	carRitem2->wTrans = Vector3(-5.0f, 2.0f, 0.0f);
+	carRitem2->TexScale = Vector3(4.0f, 4.0f, 1.0f);
+	XMStoreFloat4x4(&carRitem2->World, MakeMatrixWorld(carRitem2->wRot, carRitem2->wScale, carRitem2->wTrans));
+	XMStoreFloat4x4(&carRitem2->TexTransform, MakeMatrixTex(carRitem2->TexScale));
+	//XMStoreFloat4x4(&carRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(-5.0f, 2.0f, 0.0f));
+	//XMStoreFloat4x4(&carRitem2->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
+	carRitem2->name = "car2";
 	carRitem2->ObjCBIndex = objCBIndex++;
 	carRitem2->Mat = materials->get()->GetMaterial("tile0");
 	carRitem2->Geo = geometries->get()->GetGeometry("carGeo");
 	carRitem2->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	carRitem2->Bounds = carRitem2->Geo->DrawArgs["car"].Bounds;
-	carRitem2->IndexCount = carRitem2->Geo->DrawArgs["car"].IndexCount;
-	carRitem2->StartIndexLocation = carRitem2->Geo->DrawArgs["car"].StartIndexLocation;
-	carRitem2->BaseVertexLocation = carRitem2->Geo->DrawArgs["car"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(carRitem2.get());
+	carRitem2->SubmeshName = "car";
+	carRitem2->IndexCount = carRitem2->Geo->DrawArgs[carRitem2->SubmeshName].IndexCount;
+	carRitem2->StartIndexLocation = carRitem2->Geo->DrawArgs[carRitem2->SubmeshName].StartIndexLocation;
+	carRitem2->BaseVertexLocation = carRitem2->Geo->DrawArgs[carRitem2->SubmeshName].BaseVertexLocation;
+	carRitem2->Bounds = carRitem2->Geo->DrawArgs[carRitem2->SubmeshName].Bounds;
+	carRitem2->mLayer = RenderLayer::Opaque;
+
+	mRitemLayer[(int)carRitem2->mLayer].push_back(carRitem2.get());
 	mAllRitems.push_back(std::move(carRitem2));
 
 	auto carRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&carRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 5.0f, 0.0f));
-	XMStoreFloat4x4(&carRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
+	carRitem->wTrans = Vector3(0.0f, 5.0f, 0.0f);
+	carRitem->TexScale = Vector3(4.0f, 4.0f, 1.0f);
+	XMStoreFloat4x4(&carRitem->World, MakeMatrixWorld(carRitem->wRot, carRitem->wScale, carRitem->wTrans));
+	XMStoreFloat4x4(&carRitem->TexTransform, MakeMatrixTex(carRitem->TexScale));
+	//XMStoreFloat4x4(&carRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 5.0f, 0.0f));
+	//XMStoreFloat4x4(&carRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
+	carRitem->name = "car1";
 	carRitem->ObjCBIndex = objCBIndex++;
 	carRitem->Mat = materials->get()->GetMaterial("mirror0");
 	carRitem->Geo = geometries->get()->GetGeometry("carGeo");
 	carRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	carRitem->IndexCount = carRitem->Geo->DrawArgs["car"].IndexCount;
-	carRitem->StartIndexLocation = carRitem->Geo->DrawArgs["car"].StartIndexLocation;
-	carRitem->BaseVertexLocation = carRitem->Geo->DrawArgs["car"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(carRitem.get());
+	carRitem->SubmeshName = "car";
+	carRitem->IndexCount = carRitem->Geo->DrawArgs[carRitem->SubmeshName].IndexCount;
+	carRitem->StartIndexLocation = carRitem->Geo->DrawArgs[carRitem->SubmeshName].StartIndexLocation;
+	carRitem->BaseVertexLocation = carRitem->Geo->DrawArgs[carRitem->SubmeshName].BaseVertexLocation;
+	carRitem->mLayer = RenderLayer::Opaque;
+
+	mRitemLayer[(int)carRitem->mLayer].push_back(carRitem.get());
 	mAllRitems.push_back(std::move(carRitem));
+
+
+	auto mirrorRitem = std::make_unique<RenderItem>();
+	mirrorRitem->wTrans = Vector3(4.0f, 4.0f, 0.0f);
+	mirrorRitem->TexScale = Vector3(4.0f, 4.0f, 1.0f);
+	XMStoreFloat4x4(&mirrorRitem->World, MakeMatrixWorld(mirrorRitem->wRot, mirrorRitem->wScale, mirrorRitem->wTrans));
+	XMStoreFloat4x4(&mirrorRitem->TexTransform, MakeMatrixTex(mirrorRitem->TexScale));
+	//XMStoreFloat4x4(&mirrorRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(4.0f, 4.0f, 0.0f));
+	//XMStoreFloat4x4(&mirrorRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
+	mirrorRitem->name = "mirror";
+	mirrorRitem->ObjCBIndex = objCBIndex++;
+	mirrorRitem->Mat = materials->get()->GetMaterial("mirror0");
+	mirrorRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
+	mirrorRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	mirrorRitem->SubmeshName = "sphere";
+	mirrorRitem->IndexCount = mirrorRitem->Geo->DrawArgs[mirrorRitem->SubmeshName].IndexCount;
+	mirrorRitem->StartIndexLocation = mirrorRitem->Geo->DrawArgs[mirrorRitem->SubmeshName].StartIndexLocation;
+	mirrorRitem->BaseVertexLocation = mirrorRitem->Geo->DrawArgs[mirrorRitem->SubmeshName].BaseVertexLocation;
+	mirrorRitem->mLayer = RenderLayer::Opaque;
+
+	mRitemLayer[(int)mirrorRitem->mLayer].push_back(mirrorRitem.get());
+	mAllRitems.push_back(std::move(mirrorRitem));
 
 	//
 	// picked item
 	//
 	auto pickedRitem = std::make_unique<RenderItem>();
+	XMStoreFloat4x4(&pickedRitem->World, MakeMatrixWorld(pickedRitem->wRot, pickedRitem->wScale, pickedRitem->wTrans));
+	XMStoreFloat4x4(&pickedRitem->TexTransform, MakeMatrixTex(pickedRitem->TexScale));
+	pickedRitem->name = "pickitem";
 	pickedRitem->World = MathHelper::Identity4x4();
 	pickedRitem->TexTransform = MathHelper::Identity4x4();
 	pickedRitem->ObjCBIndex = objCBIndex++;
@@ -191,9 +321,19 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	pickedRitem->IndexCount = 0;
 	pickedRitem->StartIndexLocation = 0;
 	pickedRitem->BaseVertexLocation = 0;
-	mPickedRitem = pickedRitem.get();
-	mRitemLayer[(int)RenderLayer::Highlight].push_back(pickedRitem.get());
+	mPickedRitemview = pickedRitem.get();
+	pickedRitem->mLayer = RenderLayer::Highlight;
+
+	mRitemLayer[(int)pickedRitem->mLayer].push_back(pickedRitem.get());
 	mAllRitems.push_back(std::move(pickedRitem));
+
+	mJson->SaveToJson(mAllRitems);
+}
+
+void RenderItemClass::BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
+{
+	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries);
+	mPickedRitemview = mRitemLayer[(int)RenderLayer::Highlight][0];
 }
 
 //void RenderItemClass::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems, FrameResource* curFrames)
@@ -272,7 +412,8 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 	rayOrigin = XMVector3TransformCoord(rayOrigin, invView);
 	rayDir = XMVector3TransformNormal(rayDir, invView);
 	// Assume nothing is picked to start, so the picked render-item is invisible.
-	mPickedRitem->Visible = false;
+	mPickedRitemview->Visible = false;
+	imguidata.isSelected = false;
 
 	float tmax = 65536.0f;
 	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
@@ -312,20 +453,46 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 			{
 				tmax = distance;
 
-				mPickedRitem->Visible = true;
+				mPickedRitemview->Visible = true;
 
 				// Picked render item needs same world matrix as object picked.
-				mPickedRitem->Geo = ri->Geo;
-				mPickedRitem->World = ri->World;
-				mPickedRitem->TexTransform = ri->TexTransform;
-				mPickedRitem->NumFramesDirty = gNumFrameResources;
+				mPickedRitemview->Geo = ri->Geo;
+				mPickedRitemview->World = ri->World;
+				mPickedRitemview->TexTransform = ri->TexTransform;
+				mPickedRitemview->NumFramesDirty = gNumFrameResources;
 
 				// Offset to the picked triangle in the mesh index buffer.
-				mPickedRitem->IndexCount = ri->IndexCount;
-				mPickedRitem->BaseVertexLocation = ri->BaseVertexLocation;
-				mPickedRitem->StartIndexLocation = ri->StartIndexLocation;
+				mPickedRitemview->IndexCount = ri->IndexCount;
+				mPickedRitemview->BaseVertexLocation = ri->BaseVertexLocation;
+				mPickedRitemview->StartIndexLocation = ri->StartIndexLocation;
+
+				mPickedRitem = ri;
+				GetPickedItem();
 			}
 
 		}
 	}
+
+
+}
+
+void RenderItemClass::GetPickedItem()
+{
+	if (mPickedRitem != nullptr)
+	{
+		imguidata.isSelected = true;
+		imguidata.isShowDebug = false;
+		imguidata.pickedData.isVisible = mPickedRitem->Visible;
+	}
+	else
+	{
+		imguidata.isSelected = false;
+	}
+}
+
+void RenderItemClass::SetPickedItem(SelectedObjectDatas data)
+{
+	mPickedRitem->Visible = data.isVisible;
+	//imguidata.pickedData.isVisible
+
 }
