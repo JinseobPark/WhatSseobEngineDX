@@ -327,7 +327,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	mRitemLayer[(int)pickedRitem->mLayer].push_back(pickedRitem.get());
 	mAllRitems.push_back(std::move(pickedRitem));
 
-	mJson->SaveToJson(mAllRitems);
 }
 
 void RenderItemClass::BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
@@ -393,7 +392,7 @@ std::vector<std::shared_ptr<RenderItem>> RenderItemClass::GetAllRiems()
 	return mAllRitems;
 }
 
-void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
+void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height, ImguiData* data)
 {
 	bool isPass = false;
 	XMFLOAT4X4 P = camera.GetProj4x4f();
@@ -413,7 +412,8 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 	rayDir = XMVector3TransformNormal(rayDir, invView);
 	// Assume nothing is picked to start, so the picked render-item is invisible.
 	mPickedRitemview->Visible = false;
-	imguidata.isSelected = false;
+	data->isSelected = false;
+	mPickedRitem = nullptr;
 
 	float tmax = 65536.0f;
 	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
@@ -423,8 +423,8 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 		//auto geo = ri->Geo;
 
 		// Skip invisible render-items.
-		if (ri->Visible == false)
-			continue;
+		//if (ri->Visible == false)
+		//	continue;
 
 		XMMATRIX W = XMLoadFloat4x4(&ri->World);
 		XMMATRIX invWorld = XMMatrixInverse(&XMMatrixDeterminant(W), W);
@@ -467,7 +467,8 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 				mPickedRitemview->StartIndexLocation = ri->StartIndexLocation;
 
 				mPickedRitem = ri;
-				GetPickedItem();
+				data->isSelected = true;
+				//GetPickedItem(data);
 			}
 
 		}
@@ -476,23 +477,94 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height)
 
 }
 
-void RenderItemClass::GetPickedItem()
+void RenderItemClass::GetPickedItemOnGui(ImguiData* data)
 {
 	if (mPickedRitem != nullptr)
 	{
-		imguidata.isSelected = true;
-		imguidata.isShowDebug = false;
-		imguidata.pickedData.isVisible = mPickedRitem->Visible;
+		data->isSelected = true;
+		data->isShowDebug = false;
+		data->pickedData.name = mPickedRitem->name;
+		data->pickedData.isVisible = mPickedRitem->Visible;
+		for (int i = 0; i < 3; i++)
+		{
+			data->pickedData.position[i] = mPickedRitem->wTrans[i];
+			data->pickedData.scale[i] = mPickedRitem->wScale[i];
+			data->pickedData.rotation[i] = mPickedRitem->wRot[i];
+			data->pickedData.texscale[i] = mPickedRitem->TexScale[i];
+		}
+
 	}
 	else
 	{
-		imguidata.isSelected = false;
+		data->isSelected = false;
 	}
 }
 
-void RenderItemClass::SetPickedItem(SelectedObjectDatas data)
+void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data)
 {
-	mPickedRitem->Visible = data.isVisible;
-	//imguidata.pickedData.isVisible
+	if (mPickedRitem != nullptr)
+	{
+		mPickedRitem->Visible = data.isVisible;
+		mPickedRitem->wTrans = Vector3(data.position);
+		mPickedRitem->wScale = Vector3(data.scale);
+		mPickedRitem->wRot = Vector3(data.rotation);
+		mPickedRitem->TexScale = Vector3(data.texscale);
 
+		XMStoreFloat4x4(&mPickedRitem->World, MakeMatrixWorld(mPickedRitem->wRot, mPickedRitem->wScale, mPickedRitem->wTrans));
+		XMStoreFloat4x4(&mPickedRitem->TexTransform, MakeMatrixTex(mPickedRitem->TexScale));
+		mPickedRitem->NumFramesDirty = gNumFrameResources;
+
+
+		mPickedRitemview->wTrans = Vector3(data.position);
+		mPickedRitemview->wScale = Vector3(data.scale);
+		mPickedRitemview->wRot = Vector3(data.rotation);
+		mPickedRitemview->TexScale = Vector3(data.texscale);
+
+		XMStoreFloat4x4(&mPickedRitemview->World, MakeMatrixWorld(mPickedRitemview->wRot, mPickedRitemview->wScale, mPickedRitemview->wTrans));
+		XMStoreFloat4x4(&mPickedRitemview->TexTransform, MakeMatrixTex(mPickedRitemview->TexScale));
+		mPickedRitemview->NumFramesDirty = gNumFrameResources;
+	}
+}
+
+void RenderItemClass::SaveItemsToJson(ImguiData* data)
+{
+	mPickedRitem = nullptr;
+	mPickedRitemview->Visible = false;
+	data->isSelected = false;
+
+	mJson->SaveToJson(mAllRitems);
+}
+
+void RenderItemClass::LoadItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, ImguiData* data)
+{
+	mPickedRitem = nullptr;
+	mPickedRitemview->Visible = false;
+	data->isSelected = false;
+
+	mAllRitems.clear();
+	std::vector<std::shared_ptr<RenderItem>>().swap(mAllRitems);
+	for (int i = 0; i < (int)RenderLayer::Count; i++)
+	{
+		mRitemLayer[i].clear();
+		std::vector<RenderItem*>().swap(mRitemLayer[i]);
+	}
+
+	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries);
+	mPickedRitemview = mRitemLayer[(int)RenderLayer::Highlight][0];
+}
+
+RenderItem* RenderItemClass::GetPickedItem()
+{
+	if (mPickedRitem != nullptr)
+		return mPickedRitem;
+	else
+		nullptr;
+}
+
+RenderItem* RenderItemClass::GetPickedVewItem()
+{
+	if (mPickedRitem != nullptr)
+		return mPickedRitemview;
+	else
+		nullptr;
 }

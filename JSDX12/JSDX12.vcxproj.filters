@@ -126,6 +126,9 @@
     <ClInclude Include="src\Util\Vector3.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\Util\Editor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Object\Camera.cpp">
@@ -213,6 +216,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\Util\Vector3.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Util\Editor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

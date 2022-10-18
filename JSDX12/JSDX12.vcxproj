@@ -171,6 +171,7 @@
     <ClInclude Include="src\DirectX\Targets\Ssao.h" />
     <ClInclude Include="src\Object\Texture\Textures.h" />
     <ClInclude Include="src\Util\DXDefine.h" />
+    <ClInclude Include="src\Util\Editor.h" />
     <ClInclude Include="src\Util\GameTimer.h" />
     <ClInclude Include="src\Object\GeometryGenerator.h" />
     <ClInclude Include="src\Util\JsonClass.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="src\DirectX\Targets\ShadowMap.cpp" />
     <ClCompile Include="src\DirectX\Targets\Ssao.cpp" />
     <ClCompile Include="src\Object\Texture\Textures.cpp" />
+    <ClCompile Include="src\Util\Editor.cpp" />
     <ClCompile Include="src\Util\GameTimer.cpp" />
     <ClCompile Include="src\Object\GeometryGenerator.cpp" />
     <ClCompile Include="src\Util\JsonClass.cpp" />

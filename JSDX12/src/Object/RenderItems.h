@@ -22,11 +22,18 @@ public:
 
 	std::vector<std::shared_ptr<RenderItem>> GetAllRiems();
 
-	void Pick(int sx, int sy, Camera camera, int widht, int height);
+	void Pick(int sx, int sy, Camera camera, int widht, int height, ImguiData *data);
 
-	void GetPickedItem();
+	void GetPickedItemOnGui(ImguiData* data);
 
-	void SetPickedItem(SelectedObjectDatas data);
+	void SetPickedItemOnGui(SelectedObjectDatas data);
+
+	void SaveItemsToJson(ImguiData* data);
+	void LoadItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, ImguiData* data);
+
+	RenderItem* GetPickedItem();
+	RenderItem* GetPickedVewItem();
+
 
 private:
 

@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "WhatSseobEngine.h"
-
 using namespace DirectX;
 const int gNumFrameResources = 3;
 
 const UINT CubeMapSize = 1024;
+static ImguiData imguidata;
 
 Engine::Engine(HINSTANCE hInstance)
 	: D3DApp(hInstance)
@@ -396,7 +396,8 @@ void Engine::OnMouseDown(WPARAM btnState, int x, int y)
 	}
 	else if ((btnState & MK_LBUTTON) != 0)
 	{
-		mRenderItems->Pick(x, y, mCamera, mClientWidth, mClientHeight);
+		if(Editor.GetCurrMode() == EditModes::PICK)
+		mRenderItems->Pick(x, y, mCamera, mClientWidth, mClientHeight, &imguidata);
 		//Pick(x, y);
 	}
 
@@ -421,6 +422,17 @@ void Engine::OnMouseMove(WPARAM btnState, int x, int y)
 		mCamera.Pitch(dy);
 		mCamera.RotateY(dx);
 	}
+	else if ((btnState & MK_LBUTTON) != 0)
+	{
+		// Make each pixel correspond to a quarter of a degree.
+		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+
+		if (imguidata.isSelected)
+		{
+			Editor.UpdateTransform(dx, -dy, mRenderItems->GetPickedItem(), mRenderItems->GetPickedVewItem());
+		}
+	}
 
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -441,6 +453,15 @@ void Engine::OnKeyboardInput(const GameTimer& gt)
 
 	if (GetAsyncKeyState('D') & 0x8000)
 		mCamera.Strafe(10.0f * dt);
+
+	if (GetAsyncKeyState('1') & 0x0001)
+		Editor.ChangeMode(1);
+	if (GetAsyncKeyState('2') & 0x0001)
+		Editor.ChangeMode(2);
+	if (GetAsyncKeyState('3') & 0x0001)
+		Editor.ChangeMode(3);
+	if (GetAsyncKeyState('4') & 0x0001)
+		Editor.ChangeMode(4);
 
 	mCamera.UpdateViewMatrix();
 }
@@ -1691,9 +1712,12 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &show_another_window);
 
 		ImGui::Checkbox("Debug", &imguidata.isShowDebug);
 		ImGui::Checkbox("selected", &imguidata.isSelected);
+
+		ImGui::Text("Curr mode %d ", (int)Editor.GetCurrMode());
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
@@ -1707,17 +1731,44 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		ImGui::SameLine();
 		ImGui::Text("counter = %d", counter);
 
+		if (ImGui::Button("Save"))
+		{
+			mRenderItems->SaveItemsToJson(&imguidata);
+		}
+		if (ImGui::Button("Load"))
+		{
+			mRenderItems->LoadItemsFromJson(&mMaterials, &mGeometries, &imguidata);
+		}
+
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 	}
 
+	// 3. Show another simple window.
+	if (show_another_window)
+	{
+		ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		ImGui::Text("Hello from another window!");
+		if (ImGui::Button("Close Me"))
+			show_another_window = false;
+		ImGui::End();
+	}
 
 	if (imguidata.isSelected)
 	{
+		mRenderItems->GetPickedItemOnGui(&imguidata);
+
 		ImGui::Begin("Selected Object", &imguidata.isSelected);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		ImGui::Text("Name : %s", imguidata.pickedData.name.c_str());
 		ImGui::Checkbox("visible", &imguidata.pickedData.isVisible);
-		if (ImGui::Button("Close Me"))
-			imguidata.isSelected = false;
+		ImGui::SliderFloat3("position", &imguidata.pickedData.position[0], -10.0f, 10.0f);
+		ImGui::SliderFloat3("scale", &imguidata.pickedData.scale[0], 0.01f, 10.0f);
+		ImGui::SliderFloat3("rot", &imguidata.pickedData.rotation[0], -3.14f, 3.14f);
+		ImGui::SliderFloat3("texscale", &imguidata.pickedData.texscale[0], 0.01f, 10.0f);
+
+
+		mRenderItems->SetPickedItemOnGui(imguidata.pickedData);
+
 		ImGui::End();
 	}
 	// Rendering

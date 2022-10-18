@@ -8,6 +8,7 @@ public:
 
 	Vector3();
 	Vector3(float x, float y, float z);
+	Vector3(float* input);
 	~Vector3();
 
 	void Set(float x, float y, float z);
@@ -27,6 +28,8 @@ public:
 	float DistanceSq(const Vector3& v) const;
 	float Distance(const Vector3& v) const;
 
+	float* VectorToFloat3();
+
 	Vector3& Normalize();
 
 	/****************** operator ******************/
@@ -45,5 +48,7 @@ public:
 
 	bool operator==(const Vector3& v) const;
 	bool operator!=(const Vector3& v) const;
+
+	float operator[](int pos) const;
 
 };

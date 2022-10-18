@@ -11,6 +11,13 @@ Vector3::Vector3(float xV, float yV, float zV) : x(xV), y(yV), z(zV)
 
 }
 
+Vector3::Vector3(float* input)
+{
+	x = input[0];
+	y = input[1];
+	z = input[2];
+}
+
 Vector3::~Vector3()
 {
 }
@@ -76,6 +83,12 @@ float Vector3::DistanceSq(const Vector3& v) const
 float Vector3::Distance(const Vector3& v) const
 {
 	return (*this - v).Length();
+}
+
+float* Vector3::VectorToFloat3()
+{
+	float result[3] = { x, y, z };
+	return result;
 }
 
 Vector3& Vector3::Normalize()
@@ -161,5 +174,16 @@ bool Vector3::operator==(const Vector3& v) const
 bool Vector3::operator!=(const Vector3& v) const
 {
 	return (x != v.x) || (y != v.y) || (z != v.z);
+}
+
+float Vector3::operator[](int pos) const
+{
+	switch (pos)
+	{
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		default: return x;
+	}
 }
 

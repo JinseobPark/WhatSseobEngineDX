@@ -19,6 +19,7 @@
 #include "Object/RenderItems.h"
 #include "Shaders.h"
 #include "Datas.h"
+#include "Editor.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -168,6 +169,8 @@ private:
 	Camera mCubeMapCamera[6];
 
 	POINT mLastMousePos;
+
+	EditClass Editor;
 
 	//ImGuiIO io;
 };
