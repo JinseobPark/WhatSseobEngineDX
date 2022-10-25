@@ -86,6 +86,11 @@ private:
 	void ImguiUpdate(const GameTimer& gt);
 	void ImguiUpdatePlatform();
 	void ImguiShutdown();
+
+	void GetImguiMaterials();
+	void GetImguiMaterials2();
+	void GetImguiGeos();
+	void GetImguiLayers();
 private:
 
 	std::vector<std::unique_ptr<FrameResource>> mFrameResources;
@@ -110,14 +115,7 @@ private:
 
 	std::unique_ptr<RenderItemClass> mRenderItems;
 
-	//// List of all the render items.
-	//std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 
-	//// Render items divided by PSO.
-	//std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
-
-
-	//RenderItem* mPickedRitem = nullptr;
 
 	//UINT mInstanceCount = 0;
 	//bool mFrustumCullingEnabled = true;
@@ -171,6 +169,12 @@ private:
 	POINT mLastMousePos;
 
 	EditClass Editor;
+
+	std::vector<ImGuiMaterials> combobox_material_items;
+	std::vector<Material*> combobox_material_items2;
+	std::vector<ImGuiGeos> combobox_geo_items;
+	std::vector<ImGuiLayers> combobox_layer_items;
+	//static int combobox_material_item_current;
 
 	//ImGuiIO io;
 };

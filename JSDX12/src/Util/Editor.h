@@ -1,5 +1,7 @@
 #pragma once
+
 #include "../Object/RenderItem.h"
+#include "../Datas.h"
 
 class RenderItem;
 
@@ -32,3 +34,10 @@ public:
 private:
 	EditModes currMode = EditModes::PICK;
 };
+
+bool material_getter(void* data, int index, const char** output);
+bool material_getter2(void* data, int index, const char** output);
+bool geo_getter(void* data, int index, const char** output);
+bool layer_getter(void* data, int index, const char** output);
+
+//std::vector<std::string> LayerMap = { "Opaque", "Transparent", "AlphaTested",  "AlphaTestedTreeSprites",  "Mirrors",  "Shadow",  "Highlight",  "Sky", "OpaqueDynamicReflectors",  "ShadowDebug",  "SsaoDebug",  "Count" };

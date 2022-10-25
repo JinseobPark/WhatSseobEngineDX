@@ -35,7 +35,7 @@ bool Engine::Initialize()
 {
 
 	bool result;
-	int screenWidth = 800, screenHeight = 600;
+	int screenWidth = 1366, screenHeight = 768;
 
 	//Add Systems
 	AddSystem(new Application());

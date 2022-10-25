@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "RenderItems.h"
-#include <string>
 
 RenderItemClass::RenderItemClass()
 {
@@ -219,7 +218,7 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	//treeSpritesRitem->World = MathHelper::Identity4x4();
 	treeSpritesRitem->name = "tree";
 	treeSpritesRitem->ObjCBIndex = objCBIndex++;
-	treeSpritesRitem->Mat = materials->get()->GetMaterial("tile0");
+	treeSpritesRitem->Mat = materials->get()->GetMaterial("defaultMat");
 	treeSpritesRitem->Geo = geometries->get()->GetGeometry("treeSpritesGeo");
 	treeSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 	treeSpritesRitem->SubmeshName = "points";
@@ -418,7 +417,14 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 	float tmax = 65536.0f;
 	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
 	// of objects that can be selected.   
-	for (auto ri : mRitemLayer[(int)RenderLayer::Opaque])
+	std::vector<RenderItem*> canpicked;
+	canpicked.reserve(mRitemLayer[(int)RenderLayer::Opaque].size() + mRitemLayer[(int)RenderLayer::Transparent].size() + mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].size());
+	//for(auto items : mRitemLayer[(int)RenderLayer::Opaque
+	canpicked.insert(canpicked.begin(), mRitemLayer[(int)RenderLayer::Opaque].begin(), mRitemLayer[(int)RenderLayer::Opaque].end());
+	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::Transparent].begin(), mRitemLayer[(int)RenderLayer::Transparent].end());
+	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].begin(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].end());
+	//for (auto ri : mRitemLayer[(int)RenderLayer::Opaque])
+	for (auto ri : canpicked)
 	{
 		//auto geo = ri->Geo;
 
@@ -482,9 +488,12 @@ void RenderItemClass::GetPickedItemOnGui(ImguiData* data)
 	if (mPickedRitem != nullptr)
 	{
 		data->isSelected = true;
-		data->isShowDebug = false;
+		//data->isShowDebug = false;
 		data->pickedData.name = mPickedRitem->name;
 		data->pickedData.isVisible = mPickedRitem->Visible;
+		data->pickedData.matName = mPickedRitem->Mat->Name;
+		data->pickedData.geoName = mPickedRitem->SubmeshName;
+		data->pickedData.layerNum = min((int)mPickedRitem->mLayer, 3);
 		for (int i = 0; i < 3; i++)
 		{
 			data->pickedData.position[i] = mPickedRitem->wTrans[i];
@@ -500,7 +509,7 @@ void RenderItemClass::GetPickedItemOnGui(ImguiData* data)
 	}
 }
 
-void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data)
+void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data, std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
 {
 	if (mPickedRitem != nullptr)
 	{
@@ -509,6 +518,22 @@ void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data)
 		mPickedRitem->wScale = Vector3(data.scale);
 		mPickedRitem->wRot = Vector3(data.rotation);
 		mPickedRitem->TexScale = Vector3(data.texscale);
+		mPickedRitem->Mat = materials->get()->GetMaterial(data.matName);
+		mPickedRitem->SubmeshName = data.geoName;
+		mPickedRitem->Geo = geometries->get()->GetGeometry(geometries->get()->FindParentMesh(data.geoName));
+		mPickedRitem->IndexCount = mPickedRitem->Geo->DrawArgs[mPickedRitem->SubmeshName].IndexCount;
+		mPickedRitem->StartIndexLocation = mPickedRitem->Geo->DrawArgs[mPickedRitem->SubmeshName].StartIndexLocation;
+		mPickedRitem->BaseVertexLocation = mPickedRitem->Geo->DrawArgs[mPickedRitem->SubmeshName].BaseVertexLocation;
+		if (data.isLayerChanged)
+		{
+			if (data.layerNum < 3)
+			{
+				mRitemLayer[(int)mPickedRitem->mLayer].erase(std::remove(mRitemLayer[(int)mPickedRitem->mLayer].begin(), mRitemLayer[(int)mPickedRitem->mLayer].end(), mPickedRitem), mRitemLayer[(int)mPickedRitem->mLayer].end());
+				mRitemLayer[data.layerNum].push_back(mPickedRitem);
+				mPickedRitem->mLayer = RenderLayer(data.layerNum);
+			}
+		}
+		
 
 		XMStoreFloat4x4(&mPickedRitem->World, MakeMatrixWorld(mPickedRitem->wRot, mPickedRitem->wScale, mPickedRitem->wTrans));
 		XMStoreFloat4x4(&mPickedRitem->TexTransform, MakeMatrixTex(mPickedRitem->TexScale));
@@ -519,6 +544,11 @@ void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data)
 		mPickedRitemview->wScale = Vector3(data.scale);
 		mPickedRitemview->wRot = Vector3(data.rotation);
 		mPickedRitemview->TexScale = Vector3(data.texscale);
+		mPickedRitemview->SubmeshName = data.geoName;
+		mPickedRitemview->Geo = geometries->get()->GetGeometry(geometries->get()->FindParentMesh(data.geoName));
+		mPickedRitemview->IndexCount = mPickedRitemview->Geo->DrawArgs[mPickedRitemview->SubmeshName].IndexCount;
+		mPickedRitemview->StartIndexLocation = mPickedRitemview->Geo->DrawArgs[mPickedRitemview->SubmeshName].StartIndexLocation;
+		mPickedRitemview->BaseVertexLocation = mPickedRitemview->Geo->DrawArgs[mPickedRitemview->SubmeshName].BaseVertexLocation;
 
 		XMStoreFloat4x4(&mPickedRitemview->World, MakeMatrixWorld(mPickedRitemview->wRot, mPickedRitemview->wScale, mPickedRitemview->wTrans));
 		XMStoreFloat4x4(&mPickedRitemview->TexTransform, MakeMatrixTex(mPickedRitemview->TexScale));

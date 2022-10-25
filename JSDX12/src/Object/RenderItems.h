@@ -26,7 +26,7 @@ public:
 
 	void GetPickedItemOnGui(ImguiData* data);
 
-	void SetPickedItemOnGui(SelectedObjectDatas data);
+	void SetPickedItemOnGui(SelectedObjectDatas data, std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
 
 	void SaveItemsToJson(ImguiData* data);
 	void LoadItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, ImguiData* data);

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Editor.h"
+#include "MathHelper.h"
 
 EditClass::EditClass()
 {
@@ -62,63 +63,63 @@ void EditClass::UpdateTransform(float dx, float dy, RenderItem* item, RenderItem
 			{
 				item->wTrans.x += dx;
 				item->wTrans.y += dy;
-				itemview->wTrans.x += dx;
-				itemview->wTrans.y += dy;
+				itemview->wTrans.x = item->wTrans.x;
+				itemview->wTrans.y = item->wTrans.y;
 				break;
 			}
 			case EditModes::TRANSFORM_Y:
 			{
-				item->wTrans.z += dx;
+				item->wTrans.z -= dx;
 				item->wTrans.y += dy;
-				itemview->wTrans.z += dx;
-				itemview->wTrans.y += dy;
+				itemview->wTrans.z = item->wTrans.z;
+				itemview->wTrans.y = item->wTrans.y;
 				break;
 			}
 			case EditModes::TRANSFORM_Z:
 			{
 				item->wTrans.x += dx;
 				item->wTrans.z += dy;
-				itemview->wTrans.x += dx;
-				itemview->wTrans.z += dy;
+				itemview->wTrans.x = item->wTrans.x;
+				itemview->wTrans.z = item->wTrans.z;
 				break;
 			}
 			case EditModes::SCALE_X:
 			{
 				item->wScale.x += dx;
-				if (item->wScale.x == 0.0f) item->wScale.x += 0.001f;
+				item->wScale.x = max(item->wScale.x, 0.001f);
 				itemview->wScale.x = item->wScale.x;
 				break;
 			}
 			case EditModes::SCALE_Y:
 			{
 				item->wScale.y += dy;
-				if (item->wScale.y == 0.0f) item->wScale.y += 0.001f;
+				item->wScale.y = max(item->wScale.y, 0.001f);
 				itemview->wScale.y = item->wScale.y;
 				break;
 			}
 			case EditModes::SCALE_Z:
 			{
 				item->wScale.z += dx;
-				if (item->wScale.z == 0.0f) item->wScale.z += 0.001f;
+				item->wScale.z = max(item->wScale.z, 0.001f);
 				itemview->wScale.z = item->wScale.z;
 				break;
 			}
 			case EditModes::ROTATION_X:
 			{
 				item->wRot.x += dx * 0.25f;
-				itemview->wRot.x += dx * 0.25f;
+				itemview->wRot.x = item->wRot.x;
 				break;
 			}
 			case EditModes::ROTATION_Y:
 			{
 				item->wRot.y += dy * 0.25f;
-				itemview->wRot.y += dy * 0.25f;
+				itemview->wRot.y = item->wRot.y;
 				break;
 			}
 			case EditModes::ROTATION_Z:
 			{
 				item->wRot.z += dx * 0.25f;
-				itemview->wRot.z += dx * 0.25f;
+				itemview->wRot.z = item->wRot.z;
 				break;
 			}
 			default :
@@ -133,4 +134,41 @@ void EditClass::UpdateTransform(float dx, float dy, RenderItem* item, RenderItem
 		itemview->NumFramesDirty = gNumFrameResources;
 	}
 	
+}
+
+
+bool material_getter(void* data, int index, const char** output)
+{
+	ImGuiMaterials* materials = (ImGuiMaterials*)data;
+	ImGuiMaterials& current_material = materials[index];
+
+	*output = current_material.name.c_str(); // not very safe
+	return true;
+}
+
+bool material_getter2(void* data, int index, const char** output)
+{
+	Material** materials = (Material**)data;
+	Material& current_material = *materials[index];
+
+	*output = current_material.Name.c_str(); // not very safe
+	return true;
+}
+
+bool geo_getter(void* data, int index, const char** output)
+{
+	ImGuiGeos* geomatry = (ImGuiGeos*)data;
+	ImGuiGeos& current_geo = geomatry[index];
+
+	*output = current_geo.name.c_str(); // not very safe
+	return true;
+}
+
+bool layer_getter(void* data, int index, const char** output)
+{
+	ImGuiLayers* layer = (ImGuiLayers*)data;
+	ImGuiLayers& current_layer = layer[index];
+
+	*output = current_layer.name.c_str(); // not very safe
+	return true;
 }

@@ -169,3 +169,15 @@ UINT MaterialClass::GetMaterialSize()
 {
 	return materialMap.size();
 }
+
+std::vector<std::string> MaterialClass::GetMaterialstrings()
+{
+	std::vector<std::string> result;
+	result.reserve(materialMap.size());
+
+	for (auto keys : materialMap) {
+		result.push_back(keys.first);
+	}
+
+	return result;
+}

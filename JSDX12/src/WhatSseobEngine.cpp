@@ -5,6 +5,11 @@ const int gNumFrameResources = 3;
 
 const UINT CubeMapSize = 1024;
 static ImguiData imguidata;
+static int combobox_material_item_current = 0;
+static int combobox_geo_item_current = 0;
+static int combobox_layer_item_current = 0;
+static int combobox_material_mod_current = 1;
+static const std::vector<std::string> LayerMaps = { "Opaque", "Transparent", "OpaqueDynamicReflectors", "either"};
 
 Engine::Engine(HINSTANCE hInstance)
 	: D3DApp(hInstance)
@@ -66,13 +71,17 @@ bool Engine::Initialize()
 
 	mTextures->LoadTextures();
 	mMaterials->BuildMaterials();
+	mGeometries->BuildGeomatries();
+	GetImguiMaterials();
+	GetImguiMaterials2();
+	GetImguiGeos();
+	GetImguiLayers();
 
 	BuildRootSignature();
 	BuildSsaoRootSignature();
 	BuildDescriptorHeaps();
 	//BuildCubeDepthStencil();
 	mShaders->BuildShadersAndInputLayout();
-	mGeometries->BuildGeomatries();
 	//mRenderItems->BuildRenderItems(&mMaterials, &mGeometries);
 	mRenderItems->BuildRenderItemsFromJson( &mMaterials, &mGeometries);
 	BuildFrameResources();
@@ -372,7 +381,7 @@ void Engine::Draw(const GameTimer& gt)
 
 	ImguiUpdatePlatform();
 	// Swap the back and front buffers
-	ThrowIfFailed(mSwapChain->Present(0, 0));
+	ThrowIfFailed(mSwapChain->Present(1, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 	// Advance the fence value to mark commands up to this fence point.
@@ -1712,7 +1721,8 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
+		ImGui::Checkbox("Material Window", &imguidata.materialWindow);      // Edit bools storing our window open/close state
+		//ImGui::Checkbox("Another Window", &show_another_window);
 
 		ImGui::Checkbox("Debug", &imguidata.isShowDebug);
 		ImGui::Checkbox("selected", &imguidata.isSelected);
@@ -1745,18 +1755,37 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 	}
 
 	// 3. Show another simple window.
-	if (show_another_window)
+	if (imguidata.materialWindow)
 	{
-		ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-		ImGui::Text("Hello from another window!");
+		ImGui::Begin("Material Window", &imguidata.materialWindow);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+
+		ImGui::Combo(
+			"material",
+			&combobox_material_mod_current,
+			material_getter2,
+			combobox_material_items2.data(),
+			combobox_material_items2.size()
+		);
+
+		ImGui::ColorEdit4("diffuse albedo", &combobox_material_items2[combobox_material_mod_current]->DiffuseAlbedo.x);
+		ImGui::ColorEdit3("fresnel", &combobox_material_items2[combobox_material_mod_current]->FresnelR0.x);
+		ImGui::SliderFloat("roughness", &combobox_material_items2[combobox_material_mod_current]->Roughness, 0.0f, 1.0f);
+		combobox_material_items2[combobox_material_mod_current]->NumFramesDirty = gNumFrameResources;
+
 		if (ImGui::Button("Close Me"))
-			show_another_window = false;
+			imguidata.materialWindow = false;
 		ImGui::End();
 	}
 
 	if (imguidata.isSelected)
 	{
 		mRenderItems->GetPickedItemOnGui(&imguidata);
+		for (int i = 0; i < combobox_material_items.size(); i++)
+			if (imguidata.pickedData.matName == combobox_material_items[i].name) combobox_material_item_current = i;
+		for (int i = 0; i < combobox_geo_items.size(); i++)
+			if (imguidata.pickedData.geoName == combobox_geo_items[i].name) combobox_geo_item_current = i;
+		combobox_layer_item_current = imguidata.pickedData.layerNum;
+		int curLayernum = combobox_layer_item_current;
 
 		ImGui::Begin("Selected Object", &imguidata.isSelected);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 		ImGui::Text("Name : %s", imguidata.pickedData.name.c_str());
@@ -1767,7 +1796,36 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		ImGui::SliderFloat3("texscale", &imguidata.pickedData.texscale[0], 0.01f, 10.0f);
 
 
-		mRenderItems->SetPickedItemOnGui(imguidata.pickedData);
+		ImGui::Combo(
+			"material",
+			&combobox_material_item_current,
+			material_getter,
+			combobox_material_items.data(),
+			combobox_material_items.size()
+		);
+		imguidata.pickedData.matName = combobox_material_items[combobox_material_item_current].name;
+
+
+		ImGui::Combo(
+			"geomatry",
+			&combobox_geo_item_current,
+			geo_getter,
+			combobox_geo_items.data(),
+			combobox_geo_items.size()
+		);
+		imguidata.pickedData.geoName = combobox_geo_items[combobox_geo_item_current].name;
+
+		ImGui::Combo(
+			"Layer",
+			&combobox_layer_item_current,
+			layer_getter,
+			combobox_layer_items.data(),
+			combobox_layer_items.size()
+		);
+		imguidata.pickedData.layerNum = combobox_layer_item_current;
+		imguidata.pickedData.isLayerChanged = (curLayernum != combobox_layer_item_current);
+
+		mRenderItems->SetPickedItemOnGui(imguidata.pickedData, &mMaterials, &mGeometries);
 
 		ImGui::End();
 	}
@@ -1796,3 +1854,43 @@ void Engine::ImguiShutdown()
 	ImGui::DestroyContext();
 }
 
+void Engine::GetImguiMaterials()
+{
+	for (auto item : mMaterials->GetMaterials())
+	{
+		ImGuiMaterials temp;
+		temp.name = item.first;
+		temp.mat = item.second;
+		combobox_material_items.push_back(temp);
+	}
+}
+
+void Engine::GetImguiGeos()
+{
+	for (auto geo : mGeometries->GetSubMeshs())
+	{
+		ImGuiGeos temp;
+		temp.name = geo.first;
+		combobox_geo_items.push_back(temp);
+	}
+}
+
+void Engine::GetImguiLayers()
+{
+	for (auto layer : LayerMaps)
+	{
+		ImGuiLayers temp;
+		temp.name = layer;
+		combobox_layer_items.push_back(temp);
+	}
+}
+
+
+void Engine::GetImguiMaterials2()
+{
+	for (auto item : mMaterials->GetMaterials())
+	{
+		Material* temp = item.second.get();
+		combobox_material_items2.push_back(temp);
+	}
+}

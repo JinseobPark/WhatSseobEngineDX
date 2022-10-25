@@ -27,8 +27,8 @@
 		],
 		"Transform" : 
 		[
-			5.3850002288818359,
-			5.0,
+			8.9105758666992188,
+			2.4430913925170898,
 			0.0
 		],
 		"Visible" : true
@@ -37,8 +37,8 @@
 	{
 		"Geo" : "carGeo",
 		"ID" : 26,
-		"Layer" : 0,
-		"Mat" : "tile0",
+		"Layer" : 1,
+		"Mat" : "bricks0",
 		"Name" : "car2",
 		"Rotate" : 
 		[
@@ -61,9 +61,9 @@
 		],
 		"Transform" : 
 		[
-			-5.0,
-			2.0,
-			0.0
+			-8.7525491714477539,
+			2.314164400100708,
+			-3.8789834976196289
 		],
 		"Visible" : true
 	},
@@ -96,8 +96,8 @@
 		"Transform" : 
 		[
 			0.0,
-			1.2000000476837158,
-			0.0
+			1.3439890146255493,
+			-1.0428342819213867
 		],
 		"Visible" : true
 	},
@@ -116,9 +116,9 @@
 		],
 		"Scale" : 
 		[
-			20.0,
-			0.10000000149011612,
-			30.0
+			12.529555320739746,
+			0.49669420719146729,
+			37.355384826660156
 		],
 		"SubGeo" : "grid",
 		"TexScale" : 
@@ -129,8 +129,8 @@
 		],
 		"Transform" : 
 		[
-			0.0,
-			-1.7949999570846558,
+			0.034906584769487381,
+			0.033230375498533249,
 			0.0
 		],
 		"Visible" : true
@@ -309,7 +309,7 @@
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 7,
-		"Layer" : 1,
+		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "leftSphere0",
 		"Rotate" : 
@@ -343,7 +343,7 @@
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 11,
-		"Layer" : 1,
+		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "leftSphere1",
 		"Rotate" : 
@@ -511,9 +511,9 @@
 	},
 	"pickitem" : 
 	{
-		"Geo" : "shapeGeo",
+		"Geo" : "carGeo",
 		"ID" : 29,
-		"Layer" : 7,
+		"Layer" : 8,
 		"Mat" : "highlight0",
 		"Name" : "pickitem",
 		"Rotate" : 
@@ -524,22 +524,22 @@
 		],
 		"Scale" : 
 		[
-			20.0,
-			0.10000000149011612,
-			30.0
+			1.0,
+			1.0,
+			1.0
 		],
-		"SubGeo" : "",
+		"SubGeo" : "car",
 		"TexScale" : 
 		[
-			8.0,
-			8.0,
+			4.0,
+			4.0,
 			1.0
 		],
 		"Transform" : 
 		[
-			0.0,
-			-1.7949999570846558,
-			0.0
+			-8.7525491714477539,
+			2.314164400100708,
+			-3.8789834976196289
 		],
 		"Visible" : false
 	},
@@ -596,7 +596,7 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "cylinder",
+		"SubGeo" : "sphere",
 		"TexScale" : 
 		[
 			1.0,
@@ -921,7 +921,7 @@
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 0,
-		"Layer" : 8,
+		"Layer" : 9,
 		"Mat" : "sky",
 		"Name" : "skybox",
 		"Rotate" : 
@@ -989,8 +989,8 @@
 	{
 		"Geo" : "treeSpritesGeo",
 		"ID" : 25,
-		"Layer" : 3,
-		"Mat" : "tile0",
+		"Layer" : 4,
+		"Mat" : "defaultMat",
 		"Name" : "tree",
 		"Rotate" : 
 		[

@@ -51,6 +51,8 @@ public:
 	Material* GetMaterial(std::string);
 	UINT GetMaterialSize();
 
+	std::vector<std::string> GetMaterialstrings();
+
 private:
 	//ID3D12Device* md3dDevice = nullptr;
 	//ID3D12GraphicsCommandList* mCommandList = nullptr;

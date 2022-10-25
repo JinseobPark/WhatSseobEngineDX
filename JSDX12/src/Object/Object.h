@@ -143,6 +143,7 @@ enum class RenderLayer : int
 {
 	Opaque = 0,
 	Transparent,
+	OpaqueDynamicReflectors, 
 	AlphaTested,
 	AlphaTestedTreeSprites,
 	Mirrors,
@@ -150,12 +151,19 @@ enum class RenderLayer : int
 	Shadow,
 	Highlight,
 	Sky,
-	OpaqueDynamicReflectors, 
 	ShadowDebug,
 	SsaoDebug,
 	Count
 };
 
+//std::vector<std::string> LayerMap = { "Opaque", "Transparent", "AlphaTested",  "AlphaTestedTreeSprites",  "Mirrors",  "Shadow",  "Highlight",  "Sky", "OpaqueDynamicReflectors",  "ShadowDebug",  "SsaoDebug",  "Count" };
+//std::string mymap[] = {"hi", "bi"};
+//std::map<RenderLayer, std::string> LayerMaps = {
+//	{RenderLayer::Opaque, "Opaque"},
+//	{RenderLayer::Transparent, "Transparent"},
+//	{RenderLayer::OpaqueDynamicReflectors, "OpaqueDynamicReflectors"},
+//	{RenderLayer::Mirrors, "Mirrors"}
+//};
 
 //struct RenderItem
 //{

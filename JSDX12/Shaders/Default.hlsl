@@ -127,7 +127,13 @@ float4 PS(VertexOut pin) : SV_Target
     float4 reflectionColor = gCubeMap.Sample(gsamLinearWrap, r);
     float3 fresnelFactor = SchlickFresnel(fresnelR0, bumpedNormalW, r);
     litColor.rgb += shininess * fresnelFactor * reflectionColor.rgb;
-
+    
+#ifdef FOG
+    float distToEye = length(gEyePosW - pin.PosW);
+	float fogAmount = saturate((distToEye - gFogStart) / gFogRange);
+	litColor = lerp(litColor, gFogColor, fogAmount);
+#endif
+    
     // Common convention to take alpha from diffuse albedo.
     litColor.a = diffuseAlbedo.a;
     return litColor;

@@ -19,6 +19,36 @@ MeshGeometry* GeoMetryClass::GetGeometry(std::string str)
 	return geometryMap[str].get();
 }
 
+SubmeshGeometry GeoMetryClass::GetSubMesh(std::string str)
+{
+	for (auto item : geometryMap)
+	{
+		auto submesh = item.second->DrawArgs.find(str);
+		if (submesh != item.second->DrawArgs.end())
+		{
+			return submesh->second;
+		}
+	}
+	return geometryMap["shapeGeo"].get()->DrawArgs["box"];
+}
+
+std::vector<std::pair<std::string, std::string>> GeoMetryClass::GetSubMeshs()
+{
+	return mSubmeshGeoList;
+}
+
+std::string GeoMetryClass::FindParentMesh(std::string str)
+{
+	for (auto item : mSubmeshGeoList)
+		if (item.first == str) return item.second;
+	return "shapeGeo";
+}
+
+std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> GeoMetryClass::GetGeos()
+{
+	return geometryMap;
+}
+
 void GeoMetryClass::BuildShapeGeometry()
 {
 	GeometryGenerator geoGen;
@@ -232,6 +262,12 @@ void GeoMetryClass::BuildShapeGeometry()
 	geo->DrawArgs["cylinder"] = cylinderSubmesh;
 	geo->DrawArgs["shadow_quad"] = shadow_quadSubmesh;
 	geo->DrawArgs["ssao_quad"] = ssao_quadSubmesh;
+	mSubmeshGeoList.push_back(std::make_pair("box", "shapeGeo"));
+	mSubmeshGeoList.push_back(std::make_pair("grid", "shapeGeo"));
+	mSubmeshGeoList.push_back(std::make_pair("sphere", "shapeGeo"));
+	mSubmeshGeoList.push_back(std::make_pair("cylinder", "shapeGeo"));
+	mSubmeshGeoList.push_back(std::make_pair("shadow_quad", "shapeGeo"));
+	mSubmeshGeoList.push_back(std::make_pair("ssao_quad", "shapeGeo"));
 
 	geometryMap[geo->Name] = std::move(geo);
 }
@@ -297,6 +333,7 @@ void GeoMetryClass::BuildTreeSpritesGeometry()
 	submesh.BaseVertexLocation = 0;
 
 	geo->DrawArgs["points"] = submesh;
+	mSubmeshGeoList.push_back(std::make_pair("points", "treeSpritesGeo"));
 
 	geometryMap["treeSpritesGeo"] = std::move(geo);
 }
@@ -406,6 +443,7 @@ void GeoMetryClass::BuildCarGeometry()
 	submesh.Bounds = bounds;
 
 	geo->DrawArgs["car"] = submesh;
+	mSubmeshGeoList.push_back(std::make_pair("car", "carGeo"));
 
 	geometryMap[geo->Name] = std::move(geo);
 }

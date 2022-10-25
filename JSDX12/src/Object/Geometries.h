@@ -95,12 +95,18 @@ public:
 	void BuildGeomatries();
 
 	MeshGeometry* GetGeometry(std::string str);
+	SubmeshGeometry GetSubMesh(std::string str);
 
+	std::vector<std::pair<std::string, std::string>> GetSubMeshs();
+	std::string FindParentMesh(std::string str);
+	std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> GetGeos();
 
 private:
 	ID3D12Device* md3dDevice = nullptr;
 	ID3D12GraphicsCommandList* mCommandList = nullptr;
-	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> geometryMap;
+	std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> geometryMap;
+
+	std::vector<std::pair<std::string, std::string>> mSubmeshGeoList;
 
 	void BuildShapeGeometry();
 	void BuildTreeSpritesGeometry();
