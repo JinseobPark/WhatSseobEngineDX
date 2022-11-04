@@ -16,7 +16,8 @@ enum class EditModes
 	SCALE_Z,
 	ROTATION_X,
 	ROTATION_Y,
-	ROTATION_Z
+	ROTATION_Z,
+	NONE
 };
 
 class EditClass

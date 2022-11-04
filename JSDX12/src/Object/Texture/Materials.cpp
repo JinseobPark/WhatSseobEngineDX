@@ -78,7 +78,7 @@ void MaterialClass::BuildMaterials()
 	icemirror->Roughness = 0.5f;
 
 	auto defaultMat = std::make_unique<Material>();
-	defaultMat->Name = "default";
+	defaultMat->Name = "defaultMat";
 	defaultMat->MatCBIndex = 7;
 	defaultMat->DiffuseSrvHeapIndex = 1;
 	defaultMat->NormalSrvHeapIndex = 2;
@@ -87,11 +87,60 @@ void MaterialClass::BuildMaterials()
 	defaultMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	defaultMat->Roughness = 0.3f;
 
+	auto sample = std::make_unique<Material>();
+	sample->Name = "sample";
+	sample->MatCBIndex = 13;
+	sample->DiffuseSrvHeapIndex = 13;
+	sample->NormalSrvHeapIndex = 2;
+	sample->hasNormalMap = 0;
+	sample->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	sample->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+	sample->Roughness = 0.3f;
+
+	auto wood = std::make_unique<Material>();
+	wood->Name = "wood";
+	wood->MatCBIndex = 14;
+	wood->DiffuseSrvHeapIndex = 14;
+	wood->NormalSrvHeapIndex = 15;
+	wood->hasNormalMap = 1;
+	wood->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	wood->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+	wood->Roughness = 0.3f;
+
+	auto Polygon = std::make_unique<Material>();
+	Polygon->Name = "Polygon";
+	Polygon->MatCBIndex = 15;
+	Polygon->DiffuseSrvHeapIndex = 16;
+	Polygon->NormalSrvHeapIndex = 2;
+	Polygon->hasNormalMap = 0;
+	Polygon->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	Polygon->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	Polygon->Roughness = 0.95f;
+
+	auto grass = std::make_unique<Material>();
+	grass->Name = "grass";
+	grass->MatCBIndex = 16;
+	grass->DiffuseSrvHeapIndex = 17;
+	grass->NormalSrvHeapIndex = 18;
+	grass->hasNormalMap = 0;
+	grass->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	grass->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	grass->Roughness = 0.9f;
+
+	auto octostone = std::make_unique<Material>();
+	octostone->Name = "octostone";
+	octostone->MatCBIndex = 17;
+	octostone->DiffuseSrvHeapIndex = 19;
+	octostone->NormalSrvHeapIndex = 20;
+	octostone->hasNormalMap = 0;
+	octostone->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	octostone->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	octostone->Roughness = 0.98f;
 
 	auto treeSprites = std::make_unique<Material>();
 	treeSprites->Name = "treeSprites";
 	treeSprites->MatCBIndex = 8;
-	treeSprites->DiffuseSrvHeapIndex = 13;
+	treeSprites->DiffuseSrvHeapIndex = 16;
 	treeSprites->NormalSrvHeapIndex = 2;
 	treeSprites->hasNormalMap = 0;
 	treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -132,7 +181,7 @@ void MaterialClass::BuildMaterials()
 	auto sky = std::make_unique<Material>();
 	sky->Name = "sky";
 	sky->MatCBIndex = 12;
-	sky->DiffuseSrvHeapIndex = 14;
+	sky->DiffuseSrvHeapIndex = 16;
 	sky->NormalSrvHeapIndex = 2;
 	sky->hasNormalMap = 0;
 	sky->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -152,7 +201,12 @@ void MaterialClass::BuildMaterials()
 	materialMap["highlight0"] = std::move(highlight0);
 	materialMap["mirror0"] = std::move(mirror0);
 	materialMap["sky"] = std::move(sky);
-
+	materialMap["sample"] = std::move(sample);
+	materialMap["wood"] = std::move(wood);
+	materialMap["Polygon"] = std::move(Polygon);
+	materialMap["grass"] = std::move(grass);
+	materialMap["octostone"] = std::move(octostone);
+	
 }
 
 std::unordered_map<std::string, std::shared_ptr<Material>> MaterialClass::GetMaterials()

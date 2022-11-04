@@ -1,7 +1,15 @@
 #pragma once
 
 #include "d3dUtil.h"
+#include "../DirectX/DirectXTex.h"
+#include "../DirectX/DirectXTex.inl"
 //#include "../Object/Object.h"
+
+#ifdef _DEBUG
+#pragma comment(lib, "DirectXTex_Debug.lib")
+#else
+#pragma comment(lib, "DirectXTex.lib")
+#endif
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;

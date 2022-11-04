@@ -2,7 +2,7 @@
 	"car1" : 
 	{
 		"Geo" : "carGeo",
-		"ID" : 27,
+		"ID" : 0,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "car1",
@@ -36,8 +36,8 @@
 	"car2" : 
 	{
 		"Geo" : "carGeo",
-		"ID" : 26,
-		"Layer" : 1,
+		"ID" : 1,
+		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "car2",
 		"Rotate" : 
@@ -70,7 +70,7 @@
 	"centerbox" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 3,
+		"ID" : 2,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "centerbox",
@@ -104,7 +104,7 @@
 	"grid" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 4,
+		"ID" : 3,
 		"Layer" : 0,
 		"Mat" : "tile0",
 		"Name" : "grid",
@@ -138,7 +138,7 @@
 	"leftCy0" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 5,
+		"ID" : 4,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "leftCy0",
@@ -172,7 +172,7 @@
 	"leftCy1" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 9,
+		"ID" : 5,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "leftCy1",
@@ -206,7 +206,7 @@
 	"leftCy2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 13,
+		"ID" : 6,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "leftCy2",
@@ -240,7 +240,7 @@
 	"leftCy3" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 17,
+		"ID" : 7,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "leftCy3",
@@ -274,7 +274,7 @@
 	"leftCy4" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 21,
+		"ID" : 8,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "leftCy4",
@@ -308,7 +308,7 @@
 	"leftSphere0" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 7,
+		"ID" : 9,
 		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "leftSphere0",
@@ -342,7 +342,7 @@
 	"leftSphere1" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 11,
+		"ID" : 10,
 		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "leftSphere1",
@@ -376,7 +376,7 @@
 	"leftSphere2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 15,
+		"ID" : 11,
 		"Layer" : 1,
 		"Mat" : "stone0",
 		"Name" : "leftSphere2",
@@ -410,7 +410,7 @@
 	"leftSphere3" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 19,
+		"ID" : 12,
 		"Layer" : 1,
 		"Mat" : "stone0",
 		"Name" : "leftSphere3",
@@ -444,7 +444,7 @@
 	"leftSphere4" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 23,
+		"ID" : 13,
 		"Layer" : 1,
 		"Mat" : "stone0",
 		"Name" : "leftSphere4",
@@ -478,7 +478,7 @@
 	"mirror" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 28,
+		"ID" : 14,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "mirror",
@@ -511,8 +511,8 @@
 	},
 	"pickitem" : 
 	{
-		"Geo" : "carGeo",
-		"ID" : 29,
+		"Geo" : "spotGeo",
+		"ID" : 15,
 		"Layer" : 8,
 		"Mat" : "highlight0",
 		"Name" : "pickitem",
@@ -528,25 +528,25 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "car",
+		"SubGeo" : "spot",
 		"TexScale" : 
 		[
-			4.0,
-			4.0,
+			1.0,
+			1.0,
 			1.0
 		],
 		"Transform" : 
 		[
-			-8.7525491714477539,
-			2.314164400100708,
-			-3.8789834976196289
+			0.0,
+			5.0,
+			0.0
 		],
 		"Visible" : false
 	},
 	"rightCy0" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 6,
+		"ID" : 16,
 		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "rightCy0",
@@ -580,7 +580,7 @@
 	"rightCy1" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 10,
+		"ID" : 17,
 		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "rightCy1",
@@ -614,7 +614,7 @@
 	"rightCy2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 14,
+		"ID" : 18,
 		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "rightCy2",
@@ -648,7 +648,7 @@
 	"rightCy3" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 18,
+		"ID" : 19,
 		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "rightCy3",
@@ -682,7 +682,7 @@
 	"rightCy4" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 22,
+		"ID" : 20,
 		"Layer" : 0,
 		"Mat" : "bricks0",
 		"Name" : "rightCy4",
@@ -716,7 +716,7 @@
 	"rightSphere0" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 8,
+		"ID" : 21,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "rightSphere0",
@@ -750,7 +750,7 @@
 	"rightSphere1" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 12,
+		"ID" : 22,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "rightSphere1",
@@ -784,7 +784,7 @@
 	"rightSphere2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 16,
+		"ID" : 23,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "rightSphere2",
@@ -818,7 +818,7 @@
 	"rightSphere3" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 20,
+		"ID" : 24,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "rightSphere3",
@@ -852,7 +852,7 @@
 	"rightSphere4" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 24,
+		"ID" : 25,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "rightSphere4",
@@ -886,7 +886,7 @@
 	"shadowDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 1,
+		"ID" : 26,
 		"Layer" : 10,
 		"Mat" : "bricks0",
 		"Name" : "shadowDebugWindow",
@@ -920,7 +920,7 @@
 	"skybox" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 0,
+		"ID" : 27,
 		"Layer" : 9,
 		"Mat" : "sky",
 		"Name" : "skybox",
@@ -954,7 +954,7 @@
 	"ssaoDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 2,
+		"ID" : 28,
 		"Layer" : 11,
 		"Mat" : "bricks0",
 		"Name" : "ssaoDebugWindow",
@@ -988,9 +988,9 @@
 	"tree" : 
 	{
 		"Geo" : "treeSpritesGeo",
-		"ID" : 25,
+		"ID" : 30,
 		"Layer" : 4,
-		"Mat" : "tile0",
+		"Mat" : "treeSprites",
 		"Name" : "tree",
 		"Rotate" : 
 		[

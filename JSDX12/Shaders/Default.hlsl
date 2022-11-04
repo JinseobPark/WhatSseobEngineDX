@@ -78,22 +78,27 @@ float4 PS(VertexOut pin) : SV_Target
     uint diffuseTexIndex = matData.DiffuseMapIndex;
     uint normalMapIndex = matData.NormalMapIndex;
     
-    uint isNormal = saturate(matData.hasNormalMap);
+    uint isNormal = matData.hasNormalMap;
+    //uint isNormal = saturate(matData.hasNormalMap);
     float4 normalMapSample = 1.0f;
-    float3 bumpedNormalW = (1 - isNormal) * pin.NormalW;
+    float3 bumpedNormalW;// = (1 - isNormal) * pin.NormalW;
     
 	// Interpolating normal can unnormalize it, so renormalize it.
     pin.NormalW = normalize(pin.NormalW);
     float3 normalW = pin.NormalW;
     if (isNormal)
     {
-        normalMapSample = (isNormal) * gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC) + (1 - isNormal) * 1.0f;
-        bumpedNormalW = (isNormal) * NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW) + (1 - isNormal) * pin.NormalW;
+        normalMapSample = gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC);
+        bumpedNormalW = NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW);
+        //normalMapSample = (isNormal) * gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC) + (1 - isNormal) * 1.0f;
+        //bumpedNormalW = (isNormal) * NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW) + (1 - isNormal) * pin.NormalW;
     }
     else
     {
-        normalMapSample = (isNormal) * gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC) + (1 - isNormal) * 1.0f;
-        bumpedNormalW = (isNormal) * NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW) + (1 - isNormal) * pin.NormalW;
+        bumpedNormalW =  pin.NormalW;
+        
+        normalMapSample = 1.0f;
+        //bumpedNormalW = (isNormal) * NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW) + (1 - isNormal) * pin.NormalW;
     }
 
     
@@ -115,7 +120,7 @@ float4 PS(VertexOut pin) : SV_Target
     float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
     shadowFactor[0] = CalcShadowFactor(pin.ShadowPosH);
     
-    const float shininess = (1.0f - roughness) * normalMapSample.a;
+    const float shininess = (1.0f - roughness);// * normalMapSample.a;
     Material mat = { diffuseAlbedo, fresnelR0, shininess };
     float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
         bumpedNormalW, toEyeW, shadowFactor);

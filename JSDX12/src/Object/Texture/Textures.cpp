@@ -28,8 +28,17 @@ void TextureClass::LoadTextures()
 		"tileTexN",				    //10
 		"checkboardTex",			 //11
 		"iceTex",						//12
-		"treeArrayTex",				//13
-		"skyCubeMap"				//14
+		"sample",							//13
+		"treeArrayTex",				//14
+		"skyCubeMap",				//15
+		"skyCubeMapDesert",   //16
+		"wood",						//17
+		"woodN",							//18
+		"Polygon",					//19
+		"grass1",					//19
+		"grass1N",					//19
+		"octostone",					//19
+		"octostoneN",					//20
 	};
 
 	std::vector<std::wstring> texFilenames =
@@ -47,8 +56,18 @@ void TextureClass::LoadTextures()
 		L"Textures/tile_nmap.dds",			//10
 		L"Textures/checkboard.dds",		//11
 		L"Textures/ice.dds",						//12
-		L"Textures/treeArray2.dds",			//13
-		L"Textures/grasscube1024.dds"	//14
+		L"Textures/sample.dds",				//13
+		L"Textures/treeArray2.dds",			//14
+		L"Textures/grasscube1024.dds",	//15
+		L"Textures/snowcube.dds",//16
+		L"Textures/wood_di.dds",//17
+		L"Textures/wood_nor.dds",//18
+		L"Textures/Polygon_Texture.dds",//19
+		L"Textures/grass1_di.dds",//20
+		L"Textures/grass1_nor.dds",//21
+		L"Textures/octostone_di.dds",//22
+		L"Textures/octostone_nor.dds",//23
+
 	};
 
 	for (int i = 0; i < (int)texNames.size(); ++i)
@@ -62,6 +81,7 @@ void TextureClass::LoadTextures()
 
 		mTextureMap[texMap->Name] = std::move(texMap);
 	}
+
 }
 
 ComPtr<ID3D12Resource> TextureClass::GetResource(std::string str)

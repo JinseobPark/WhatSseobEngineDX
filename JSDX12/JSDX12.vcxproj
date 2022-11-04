@@ -72,16 +72,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>C:\Users\WhatSseob\Desktop\Graphysics\WhatSseobEngineDX\JSDX12\lib\DirectXTex;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>C:\Users\WhatSseob\Desktop\Graphysics\WhatSseobEngineDX\JSDX12\lib\DirectXTex;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <PublicIncludeDirectories>$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <LibraryPath>C:\Users\WhatSseob\Desktop\Graphysics\WhatSseobEngineDX\JSDX12\lib\DirectXTex;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>C:\Users\WhatSseob\Desktop\Graphysics\WhatSseobEngineDX\JSDX12\lib\DirectXTex;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,6 +97,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTex.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -109,13 +114,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTex.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>Default</ConformanceMode>
       <AdditionalIncludeDirectories>src\DirectX;src\Util;external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -123,6 +129,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTex.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,7 +138,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>external;src\Util;src\DirectX;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -141,6 +148,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTex.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,6 +164,7 @@
     <ClInclude Include="external\json\json\json-forwards.h" />
     <ClInclude Include="external\json\json\json.h" />
     <ClInclude Include="src\Datas.h" />
+    <ClInclude Include="src\DirectX\DirectXTex.h" />
     <ClInclude Include="src\DirectX\FrameResource.h" />
     <ClInclude Include="src\DirectX\Shaders.h" />
     <ClInclude Include="src\Object\Camera.h" />
@@ -177,6 +186,7 @@
     <ClInclude Include="src\Util\GameTimer.h" />
     <ClInclude Include="src\Object\GeometryGenerator.h" />
     <ClInclude Include="src\Util\JsonClass.h" />
+    <ClInclude Include="src\Util\Logger.h" />
     <ClInclude Include="src\Util\MathHelper.h" />
     <ClInclude Include="src\DirectX\UploadBuffer.h" />
     <ClInclude Include="src\Util\stdafx.h" />
@@ -209,6 +219,7 @@
     <ClCompile Include="src\Util\GameTimer.cpp" />
     <ClCompile Include="src\Object\GeometryGenerator.cpp" />
     <ClCompile Include="src\Util\JsonClass.cpp" />
+    <ClCompile Include="src\Util\Logger.cpp" />
     <ClCompile Include="src\Util\MathHelper.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Util\stdafx.cpp">
@@ -220,6 +231,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="src\DirectX\DirectXTex.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

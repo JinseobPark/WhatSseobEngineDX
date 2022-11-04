@@ -15,7 +15,7 @@ RenderItemClass::~RenderItemClass()
 
 void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
 {
-	UINT objCBIndex = 0;
+	//UINT objCBIndex = 0;
 
 	auto skyRitem = std::make_unique<RenderItem>();
 	skyRitem->name = "skybox";
@@ -330,7 +330,7 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 
 void RenderItemClass::BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
 {
-	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries);
+	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries, &objCBIndex);
 	mPickedRitemview = mRitemLayer[(int)RenderLayer::Highlight][0];
 }
 
@@ -572,6 +572,7 @@ void RenderItemClass::LoadItemsFromJson(std::unique_ptr<MaterialClass>* material
 	data->isSelected = false;
 
 	mAllRitems.clear();
+	objCBIndex = 0;
 	std::vector<std::shared_ptr<RenderItem>>().swap(mAllRitems);
 	for (int i = 0; i < (int)RenderLayer::Count; i++)
 	{
@@ -579,8 +580,40 @@ void RenderItemClass::LoadItemsFromJson(std::unique_ptr<MaterialClass>* material
 		std::vector<RenderItem*>().swap(mRitemLayer[i]);
 	}
 
-	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries);
+	mJson->LoadFromJson(mAllRitems, mRitemLayer, materials, geometries, &objCBIndex);
 	mPickedRitemview = mRitemLayer[(int)RenderLayer::Highlight][0];
+}
+
+void RenderItemClass::AddRenderItem(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, std::string name)
+{
+	auto AddRitem = std::make_unique<RenderItem>();
+	AddRitem->name = name;
+	AddRitem->wScale = Vector3(1.0f, 1.0f, 1.0f);
+	AddRitem->wTrans = Vector3(0.0f, 5.0f, 0.0f);
+	XMStoreFloat4x4(&AddRitem->World, MakeMatrixWorld(AddRitem->wRot, AddRitem->wScale, AddRitem->wTrans));
+	XMStoreFloat4x4(&AddRitem->TexTransform, MakeMatrixTex(AddRitem->TexScale));
+	AddRitem->ObjCBIndex = objCBIndex++;
+	AddRitem->Mat = materials->get()->GetMaterial("gray0");
+	AddRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
+	AddRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	AddRitem->SubmeshName = "box";
+	AddRitem->IndexCount = AddRitem->Geo->DrawArgs[AddRitem->SubmeshName].IndexCount;
+	AddRitem->StartIndexLocation = AddRitem->Geo->DrawArgs[AddRitem->SubmeshName].StartIndexLocation;
+	AddRitem->BaseVertexLocation = AddRitem->Geo->DrawArgs[AddRitem->SubmeshName].BaseVertexLocation;
+	AddRitem->mLayer = RenderLayer::Opaque;
+
+	mRitemLayer[(int)AddRitem->mLayer].push_back(AddRitem.get());
+	mAllRitems.push_back(std::move(AddRitem));
+}
+
+void RenderItemClass::DeleteRenderItem(ImguiData* data)
+{
+	mRitemLayer[(int)mPickedRitem->mLayer].erase(std::remove(mRitemLayer[(int)mPickedRitem->mLayer].begin(), mRitemLayer[(int)mPickedRitem->mLayer].end(), mPickedRitem), mRitemLayer[(int)mPickedRitem->mLayer].end());
+	mAllRitems.erase(std::remove_if(mAllRitems.begin(), mAllRitems.end(), [=](const std::shared_ptr<RenderItem>& item) {return item.get() == mPickedRitem; }), mAllRitems.end());
+
+	mPickedRitem = nullptr;
+	mPickedRitemview->Visible = false;
+	data->isSelected = false;
 }
 
 RenderItem* RenderItemClass::GetPickedItem()

@@ -188,7 +188,7 @@ float4 PS(GeoOut pin) : SV_Target
     float roughness = matData.Roughness;
     uint diffuseTexIndex = matData.DiffuseMapIndex;
     float3 uvw = float3(pin.TexC, pin.PrimID % 3);
-    diffuseAlbedo *= gTextureMaps[13].Sample(gsamAnisotropicWrap, uvw.xy);
+    diffuseAlbedo *= gTextureMaps[21].Sample(gsamAnisotropicWrap, uvw.xy);
 	
 #ifdef ALPHA_TEST
 	// Discard pixel if texture alpha < 0.1.  We do this test as soon 

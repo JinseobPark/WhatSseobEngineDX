@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "Geometries.h"
+#include "Logger.h"
+#include <time.h>
 
 GeoMetryClass::GeoMetryClass(ID3D12Device* device, ID3D12GraphicsCommandList* commandL)
 {
@@ -9,9 +11,37 @@ GeoMetryClass::GeoMetryClass(ID3D12Device* device, ID3D12GraphicsCommandList* co
 
 void GeoMetryClass::BuildGeomatries()
 {
+    Logger time_loger(LOG_LEVEL_INFO);
+    clock_t temp;
+    std::string timers;
+    temp = clock();
 	BuildShapeGeometry();
-	BuildCarGeometry();
-	BuildTreeSpritesGeometry();
+    BuildModelGeometryOri("Models/skull.txt", "skull");
+    BuildModelGeometryOri("Models/car.txt", "car");
+    BuildModelGeometry("Models/dragon2.obj", "dragon2");
+    BuildModelGeometry("Models/mirrorball.obj", "mirrorball");
+    BuildModelGeometry("Models/spot.obj", "spot");
+    BuildModelGeometry("Models/house.obj", "house");
+    BuildModelGeometry("Models/light.obj", "light");
+    BuildModelGeometry("Models/light2.obj", "light2");
+    BuildModelGeometry("Models/light3.obj", "light3");
+    BuildModelGeometry("Models/bridge.obj", "bridge");
+    BuildModelGeometry("Models/airplane.obj", "airplane");
+    BuildModelGeometry("Models/air_building1.obj", "air_building1");
+    BuildModelGeometry("Models/air_building2.obj", "air_building2");
+    BuildModelGeometry("Models/air_bus.obj", "air_bus");
+    BuildModelGeometry("Models/biplane.obj", "biplane");
+    BuildModelGeometry("Models/plaques.obj", "plaques");
+    BuildModelGeometry("Models/loader.obj", "loader");
+    BuildModelGeometry("Models/helicopter.obj", "helicopter");
+    BuildModelGeometry("Models/helicopter_place.obj", "helicopter_place");
+    BuildModelGeometry("Models/control_tower.obj", "control_tower");
+    BuildModelGeometry("Models/hangar1.obj", "hangar1");
+    BuildModelGeometry("Models/boarding_ladder.obj", "boarding_ladder");
+    BuildTreeSpritesGeometry();
+    timers = "Load Model time : " + std::to_string((double)(clock() - temp) / CLOCKS_PER_SEC);
+    time_loger.info(timers.c_str(), 1);
+
 }
 
 MeshGeometry* GeoMetryClass::GetGeometry(std::string str)
@@ -284,8 +314,8 @@ void GeoMetryClass::BuildTreeSpritesGeometry()
 	std::array<TreeSpriteVertex, treeCount> vertices;
 	for (UINT i = 0; i < treeCount; ++i)
 	{
-		float x = MathHelper::RandF(-4.0f, 4.0f);
-		float z = MathHelper::RandF(-4.0f, 4.0f);
+		float x = 30.0f + MathHelper::RandF(-4.0f, 4.0f);
+		float z = 30.0f + MathHelper::RandF(-4.0f, 4.0f);
 		float y = 0.0f;
 
 		// Move tree slightly above land height.
@@ -340,11 +370,11 @@ void GeoMetryClass::BuildTreeSpritesGeometry()
 
 void GeoMetryClass::BuildCarGeometry()
 {
-	std::ifstream fin("Models/car.txt");
+	std::ifstream fin("Models/skull.txt");
 
 	if (!fin)
 	{
-		MessageBox(0, L"Models/car.txt not found.", 0, 0);
+		MessageBox(0, L"Models/skull.txt not found.", 0, 0);
 		return;
 	}
 
@@ -446,4 +476,736 @@ void GeoMetryClass::BuildCarGeometry()
 	mSubmeshGeoList.push_back(std::make_pair("car", "carGeo"));
 
 	geometryMap[geo->Name] = std::move(geo);
+}
+
+void GeoMetryClass::BuildModelGeometryOri(std::string filename, std::string modelname)
+{
+
+    std::ifstream fin(filename);
+
+    if (!fin)
+    {
+        MessageBox(0, L"a model not found.", 0, 0);
+        return;
+    }
+
+    UINT vcount = 0;
+    UINT tcount = 0;
+    std::string ignore;
+
+    fin >> ignore >> vcount;
+    fin >> ignore >> tcount;
+    fin >> ignore >> ignore >> ignore >> ignore;
+
+    XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
+    XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
+
+    XMVECTOR vMin = XMLoadFloat3(&vMinf3);
+    XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
+
+    std::vector<Vertex> vertices(vcount);
+    for (UINT i = 0; i < vcount; ++i)
+    {
+        fin >> vertices[i].Pos.x >> vertices[i].Pos.y >> vertices[i].Pos.z;
+        fin >> vertices[i].Normal.x >> vertices[i].Normal.y >> vertices[i].Normal.z;
+
+        vertices[i].TangentU = XMFLOAT3(0, 0, 0);
+        XMVECTOR P = XMLoadFloat3(&vertices[i].Pos);
+
+        // Project point onto unit sphere and generate spherical texture coordinates.
+        XMFLOAT3 spherePos;
+        XMStoreFloat3(&spherePos, XMVector3Normalize(P));
+
+        float theta = atan2f(spherePos.z, spherePos.x);
+
+        // Put in [0, 2pi].
+        if (theta < 0.0f)
+            theta += XM_2PI;
+
+        float phi = acosf(spherePos.y);
+
+        float u = theta / (2.0f * XM_PI);
+        float v = phi / XM_PI;
+
+        vertices[i].TexC = { u, v };
+
+        vMin = XMVectorMin(vMin, P);
+        vMax = XMVectorMax(vMax, P);
+    }
+
+    BoundingBox bounds;
+    XMStoreFloat3(&bounds.Center, 0.5f * (vMin + vMax));
+    XMStoreFloat3(&bounds.Extents, 0.5f * (vMax - vMin));
+
+    fin >> ignore;
+    fin >> ignore;
+    fin >> ignore;
+
+    std::vector<std::int32_t> indices(3 * tcount);
+    for (UINT i = 0; i < tcount; ++i)
+    {
+        fin >> indices[i * 3 + 0] >> indices[i * 3 + 1] >> indices[i * 3 + 2];
+    }
+
+    fin.close();
+
+    //
+    // Pack the indices of all the meshes into one index buffer.
+    //
+
+    const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+
+    const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
+
+    auto geo = std::make_unique<MeshGeometry>();
+    geo->Name = modelname + "Geo";
+
+    ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+    CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+    geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+        mCommandList, vertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+    geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+        mCommandList, indices.data(), ibByteSize, geo->IndexBufferUploader);
+
+    geo->VertexByteStride = sizeof(Vertex);
+    geo->VertexBufferByteSize = vbByteSize;
+    geo->IndexFormat = DXGI_FORMAT_R32_UINT;
+    geo->IndexBufferByteSize = ibByteSize;
+
+    SubmeshGeometry submesh;
+    submesh.IndexCount = (UINT)indices.size();
+    submesh.StartIndexLocation = 0;
+    submesh.BaseVertexLocation = 0;
+    submesh.Bounds = bounds;
+
+    geo->DrawArgs[modelname] = submesh;
+    mSubmeshGeoList.push_back(std::make_pair(modelname, geo->Name));
+
+    geometryMap[geo->Name] = std::move(geo);
+}
+
+void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelname)
+{
+        HRESULT hr = 0;
+
+        std::wifstream fileIn(filename.c_str());    //Open file
+        std::wstring meshMatLib;                    //String to hold our obj material library filename
+
+        //Arrays to store our model's information
+        std::vector<DWORD> indices;
+        std::vector<XMFLOAT3> vertPos;
+        std::vector<XMFLOAT3> vertNorm;
+        std::vector<XMFLOAT2> vertTexCoord;
+        std::vector<std::wstring> meshMaterials;
+
+        //Vertex definition indices
+        std::vector<int> vertPosIndex;
+        std::vector<int> vertNormIndex;
+        std::vector<int> vertTCIndex;
+
+        //Make sure we have a default if no tex coords or normals are defined
+        bool hasTexCoord = false;
+        bool hasNorm = false;
+        bool ComputeNormal = false;
+
+        //Temp variables to store into vectors
+        std::wstring meshMaterialsTemp;
+        int vertPosIndexTemp;
+        int vertNormIndexTemp;
+        int vertTCIndexTemp;
+
+        wchar_t checkChar;        //The variable we will use to store one char from file at a time
+        std::wstring face;        //Holds the string containing our face vertices
+        int vIndex = 0;            //Keep track of our vertex index count
+        int triangleCount = 0;    //Total Triangles
+        int totalVerts = 0;
+        int meshTriangles = 0;
+
+        //Check to see if the file was opened
+        if (fileIn)
+        {
+            while (fileIn)
+            {
+                checkChar = fileIn.get();    //Get next char
+
+                switch (checkChar)
+                {
+                case '#':
+                    checkChar = fileIn.get();
+                    while (checkChar != '\n')
+                        checkChar = fileIn.get();
+                    break;
+                case 'v':    //Get Vertex Descriptions
+                    checkChar = fileIn.get();
+                    if (checkChar == ' ')    //v - vert position
+                    {
+                        float vz, vy, vx;
+                        fileIn >> vx >> vy >> vz;    //Store the next three types
+
+                        //if (isRHCoordSys)    //If model is from an RH Coord System
+                        //    vertPos.push_back(XMFLOAT3(vx, vy, vz * -1.0f));    //Invert the Z axis
+                        //else
+                            vertPos.push_back(XMFLOAT3(vx, vy, vz));
+                    }
+                    if (checkChar == 't')    //vt - vert tex coords
+                    {
+                        float vtcu, vtcv;
+                        fileIn >> vtcu >> vtcv;        //Store next two types
+
+                        //if (isRHCoordSys)    //If model is from an RH Coord System
+                        //    vertTexCoord.push_back(XMFLOAT2(vtcu, 1.0f - vtcv));    //Reverse the "v" axis
+                        //else
+                            vertTexCoord.push_back(XMFLOAT2(vtcu, vtcv));
+
+                        hasTexCoord = true;    //We know the model uses texture coords
+                    }
+                    //Since we compute the normals later, we don't need to check for normals
+                    //In the file, but i'll do it here anyway
+                    if (checkChar == 'n')    //vn - vert normal
+                    {
+                        float vnx, vny, vnz;
+                        fileIn >> vnx >> vny >> vnz;    //Store next three types
+
+                        //if (isRHCoordSys)    //If model is from an RH Coord System
+                        //    vertNorm.push_back(XMFLOAT3(vnx, vny, vnz * -1.0f));    //Invert the Z axis
+                        //else
+                            vertNorm.push_back(XMFLOAT3(vnx, vny, vnz));
+
+                        hasNorm = true;    //We know the model defines normals
+                    }
+                    break;
+
+                // Not use 'g'
+                //    //New group (Subset)
+                //case 'g':    //g - defines a group
+                //    checkChar = fileIn.get();
+                //    if (checkChar == ' ')
+                //    {
+                //        subsetIndexStart.push_back(vIndex);        //Start index for this subset
+                //        subsetCount++;
+                //    }
+                //    break;
+
+                    //Get Face Index
+                case 'f':    //f - defines the faces
+                    checkChar = fileIn.get();
+                    if (checkChar == ' ')
+                    {
+                        face = L"";
+                        std::wstring VertDef;    //Holds one vertex definition at a time
+                        triangleCount = 0;
+
+                        checkChar = fileIn.get();
+                        while (checkChar != '\n')
+                        {
+                            face += checkChar;            //Add the char to our face string
+                            checkChar = fileIn.get();    //Get the next Character
+                            if (checkChar == ' ')        //If its a space...
+                                triangleCount++;        //Increase our triangle count
+                        }
+
+                        //Check for space at the end of our face string
+                        if (face[face.length() - 1] == ' ')
+                            triangleCount--;    //Each space adds to our triangle count
+
+                        triangleCount -= 1;        //Ever vertex in the face AFTER the first two are new faces
+
+                        std::wstringstream ss(face);
+
+                        if (face.length() > 0)
+                        {
+                            int firstVIndex, lastVIndex;    //Holds the first and last vertice's index
+
+                            for (int i = 0; i < 3; ++i)        //First three vertices (first triangle)
+                            {
+                                ss >> VertDef;    //Get vertex definition (vPos/vTexCoord/vNorm)
+
+                                std::wstring vertPart;
+                                int whichPart = 0;        //(vPos, vTexCoord, or vNorm)
+
+                                //Parse this string
+                                for (int j = 0; j < VertDef.length(); ++j)
+                                {
+                                    if (VertDef[j] != '/')    //If there is no divider "/", add a char to our vertPart
+                                        vertPart += VertDef[j];
+
+                                    //If the current char is a divider "/", or its the last character in the string
+                                    if (VertDef[j] == '/' || j == VertDef.length() - 1)
+                                    {
+                                        std::wistringstream wstringToInt(vertPart);    //Used to convert wstring to int
+
+                                        if (whichPart == 0)    //If vPos
+                                        {
+                                            wstringToInt >> vertPosIndexTemp;
+                                            vertPosIndexTemp -= 1;        //subtract one since c++ arrays start with 0, and obj start with 1
+
+                                            //Check to see if the vert pos was the only thing specified
+                                            if (j == VertDef.length() - 1)
+                                            {
+                                                vertNormIndexTemp = 0;
+                                                vertTCIndexTemp = 0;
+                                            }
+                                        }
+
+                                        else if (whichPart == 1)    //If vTexCoord
+                                        {
+                                            if (vertPart != L"")    //Check to see if there even is a tex coord
+                                            {
+                                                wstringToInt >> vertTCIndexTemp;
+                                                vertTCIndexTemp -= 1;    //subtract one since c++ arrays start with 0, and obj start with 1
+                                            }
+                                            else    //If there is no tex coord, make a default
+                                                vertTCIndexTemp = 0;
+
+                                            //If the cur. char is the second to last in the string, then
+                                            //there must be no normal, so set a default normal
+                                            if (j == VertDef.length() - 1)
+                                                vertNormIndexTemp = 0;
+
+                                        }
+                                        else if (whichPart == 2)    //If vNorm
+                                        {
+                                            std::wistringstream wstringToInt(vertPart);
+
+                                            wstringToInt >> vertNormIndexTemp;
+                                            vertNormIndexTemp -= 1;        //subtract one since c++ arrays start with 0, and obj start with 1
+                                        }
+
+                                        vertPart = L"";    //Get ready for next vertex part
+                                        whichPart++;    //Move on to next vertex part                    
+                                    }
+                                }
+
+                                //Check to make sure there is at least one subset
+                                //if (subsetCount == 0)
+                                //{
+                                //    subsetIndexStart.push_back(vIndex);        //Start index for this subset
+                                //    subsetCount++;
+                                //}
+
+                                //Avoid duplicate vertices
+                                bool vertAlreadyExists = false;
+                                if (totalVerts >= 3)    //Make sure we at least have one triangle to check
+                                {
+                                    //Loop through all the vertices
+                                    for (int iCheck = 0; iCheck < totalVerts; ++iCheck)
+                                    {
+                                        //If the vertex position and texture coordinate in memory are the same
+                                        //As the vertex position and texture coordinate we just now got out
+                                        //of the obj file, we will set this faces vertex index to the vertex's
+                                        //index value in memory. This makes sure we don't create duplicate vertices
+                                        if (vertPosIndexTemp == vertPosIndex[iCheck] && !vertAlreadyExists)
+                                        {
+                                            if (vertTCIndexTemp == vertTCIndex[iCheck])
+                                            {
+                                                indices.push_back(iCheck);        //Set index for this vertex
+                                                vertAlreadyExists = true;        //If we've made it here, the vertex already exists
+                                            }
+                                        }
+                                    }
+                                }
+
+                                //If this vertex is not already in our vertex arrays, put it there
+                                if (!vertAlreadyExists)
+                                {
+                                    vertPosIndex.push_back(vertPosIndexTemp);
+                                    vertTCIndex.push_back(vertTCIndexTemp);
+                                    vertNormIndex.push_back(vertNormIndexTemp);
+                                    totalVerts++;    //We created a new vertex
+                                    indices.push_back(totalVerts - 1);    //Set index for this vertex
+                                }
+
+                                //If this is the very first vertex in the face, we need to
+                                //make sure the rest of the triangles use this vertex
+                                if (i == 0)
+                                {
+                                    firstVIndex = indices[vIndex];    //The first vertex index of this FACE
+
+                                }
+
+                                //If this was the last vertex in the first triangle, we will make sure
+                                //the next triangle uses this one (eg. tri1(1,2,3) tri2(1,3,4) tri3(1,4,5))
+                                if (i == 2)
+                                {
+                                    lastVIndex = indices[vIndex];    //The last vertex index of this TRIANGLE
+                                }
+                                vIndex++;    //Increment index count
+                            }
+
+                            meshTriangles++;    //One triangle down
+
+                            //If there are more than three vertices in the face definition, we need to make sure
+                            //we convert the face to triangles. We created our first triangle above, now we will
+                            //create a new triangle for every new vertex in the face, using the very first vertex
+                            //of the face, and the last vertex from the triangle before the current triangle
+                            for (int l = 0; l < triangleCount - 1; ++l)    //Loop through the next vertices to create new triangles
+                            {
+                                //First vertex of this triangle (the very first vertex of the face too)
+                                indices.push_back(firstVIndex);            //Set index for this vertex
+                                vIndex++;
+
+                                //Second Vertex of this triangle (the last vertex used in the tri before this one)
+                                indices.push_back(lastVIndex);            //Set index for this vertex
+                                vIndex++;
+
+                                //Get the third vertex for this triangle
+                                ss >> VertDef;
+
+                                std::wstring vertPart;
+                                int whichPart = 0;
+
+                                //Parse this string (same as above)
+                                for (int j = 0; j < VertDef.length(); ++j)
+                                {
+                                    if (VertDef[j] != '/')
+                                        vertPart += VertDef[j];
+                                    if (VertDef[j] == '/' || j == VertDef.length() - 1)
+                                    {
+                                        std::wistringstream wstringToInt(vertPart);
+
+                                        if (whichPart == 0)
+                                        {
+                                            wstringToInt >> vertPosIndexTemp;
+                                            vertPosIndexTemp -= 1;
+
+                                            //Check to see if the vert pos was the only thing specified
+                                            if (j == VertDef.length() - 1)
+                                            {
+                                                vertTCIndexTemp = 0;
+                                                vertNormIndexTemp = 0;
+                                            }
+                                        }
+                                        else if (whichPart == 1)
+                                        {
+                                            if (vertPart != L"")
+                                            {
+                                                wstringToInt >> vertTCIndexTemp;
+                                                vertTCIndexTemp -= 1;
+                                            }
+                                            else
+                                                vertTCIndexTemp = 0;
+                                            if (j == VertDef.length() - 1)
+                                                vertNormIndexTemp = 0;
+
+                                        }
+                                        else if (whichPart == 2)
+                                        {
+                                            std::wistringstream wstringToInt(vertPart);
+
+                                            wstringToInt >> vertNormIndexTemp;
+                                            vertNormIndexTemp -= 1;
+                                        }
+
+                                        vertPart = L"";
+                                        whichPart++;
+                                    }
+                                }
+
+                                //Check for duplicate vertices
+                                bool vertAlreadyExists = false;
+                                if (totalVerts >= 3)    //Make sure we at least have one triangle to check
+                                {
+                                    for (int iCheck = 0; iCheck < totalVerts; ++iCheck)
+                                    {
+                                        if (vertPosIndexTemp == vertPosIndex[iCheck] && !vertAlreadyExists)
+                                        {
+                                            if (vertTCIndexTemp == vertTCIndex[iCheck])
+                                            {
+                                                indices.push_back(iCheck);            //Set index for this vertex
+                                                vertAlreadyExists = true;        //If we've made it here, the vertex already exists
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!vertAlreadyExists)
+                                {
+                                    vertPosIndex.push_back(vertPosIndexTemp);
+                                    vertTCIndex.push_back(vertTCIndexTemp);
+                                    vertNormIndex.push_back(vertNormIndexTemp);
+                                    totalVerts++;                    //New vertex created, add to total verts
+                                    indices.push_back(totalVerts - 1);        //Set index for this vertex
+                                }
+
+                                //Set the second vertex for the next triangle to the last vertex we got        
+                                lastVIndex = indices[vIndex];    //The last vertex index of this TRIANGLE
+
+                                meshTriangles++;    //New triangle defined
+                                vIndex++;
+                            }
+                        }
+                    }
+                    break;
+
+                //case 'm':    //mtllib - material library filename
+                //    checkChar = fileIn.get();
+                //    if (checkChar == 't')
+                //    {
+                //        checkChar = fileIn.get();
+                //        if (checkChar == 'l')
+                //        {
+                //            checkChar = fileIn.get();
+                //            if (checkChar == 'l')
+                //            {
+                //                checkChar = fileIn.get();
+                //                if (checkChar == 'i')
+                //                {
+                //                    checkChar = fileIn.get();
+                //                    if (checkChar == 'b')
+                //                    {
+                //                        checkChar = fileIn.get();
+                //                        if (checkChar == ' ')
+                //                        {
+                //                            //Store the material libraries file name
+                //                            //fileIn >> meshMatLib;
+                //                        }
+                //                    }
+                //                }
+                //            }
+                //        }
+                //    }
+
+                //    break;
+
+                //case 'u':    //usemtl - which material to use
+                //    checkChar = fileIn.get();
+                //    if (checkChar == 's')
+                //    {
+                //        checkChar = fileIn.get();
+                //        if (checkChar == 'e')
+                //        {
+                //            checkChar = fileIn.get();
+                //            if (checkChar == 'm')
+                //            {
+                //                checkChar = fileIn.get();
+                //                if (checkChar == 't')
+                //                {
+                //                    checkChar = fileIn.get();
+                //                    if (checkChar == 'l')
+                //                    {
+                //                        checkChar = fileIn.get();
+                //                        if (checkChar == ' ')
+                //                        {
+                //                            meshMaterialsTemp = L"";    //Make sure this is cleared
+
+                //                            fileIn >> meshMaterialsTemp; //Get next type (string)
+
+                //                            meshMaterials.push_back(meshMaterialsTemp);
+                //                        }
+                //                    }
+                //                }
+                //            }
+                //        }
+                //    }
+                //    break;
+
+                default:
+                    break;
+                }
+            }
+        }
+        else    //If we could not open the file
+        {
+
+            MessageBox(0, L"Models obj not found.", 0, 0);
+            return;
+        }
+
+        //subsetIndexStart.push_back(vIndex); //There won't be another index start after our last subset, so set it here
+
+        ////sometimes "g" is defined at the very top of the file, then again before the first group of faces.
+        ////This makes sure the first subset does not conatain "0" indices.
+        //if (subsetIndexStart[1] == 0)
+        //{
+        //    subsetIndexStart.erase(subsetIndexStart.begin() + 1);
+        //    meshSubsets--;
+        //}
+
+        //Make sure we have a default for the tex coord and normal
+        //if one or both are not specified
+        if (!hasNorm)
+            vertNorm.push_back(XMFLOAT3(0.0f, 0.0f, 0.0f));
+        if (!hasTexCoord)
+            vertTexCoord.push_back(XMFLOAT2(0.0f, 0.0f));
+
+        //Close the obj file, and open the mtl file
+        fileIn.close();
+
+        std::vector<Vertex> vertices;
+        Vertex tempVert;
+
+        //Create our vertices using the information we got 
+        //from the file and store them in a vector
+        for (int j = 0; j < totalVerts; ++j)
+        {
+            tempVert.Pos = vertPos[vertPosIndex[j]];
+            tempVert.Normal = vertNorm[vertNormIndex[j]];
+            tempVert.TexC = vertTexCoord[vertTCIndex[j]];
+
+            vertices.push_back(tempVert);
+        }
+
+        //////////////////////Compute Normals///////////////////////////
+        //If computeNormals was set to true then we will create our own
+        //normals, if it was set to false we will use the obj files normals
+        if (!hasNorm)
+        {
+            std::vector<XMFLOAT3> tempNormal;
+
+            //normalized and unnormalized normals
+            XMFLOAT3 unnormalized = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+            //Used to get vectors (sides) from the position of the verts
+            float vecX, vecY, vecZ;
+
+            //Two edges of our triangle
+            XMVECTOR edge1 = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+            XMVECTOR edge2 = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+
+            //Compute face normals
+            for (int i = 0; i < meshTriangles; ++i)
+            {
+                //Get the vector describing one edge of our triangle (edge 0,2)
+                vecX = vertices[indices[(i * 3)]].Pos.x - vertices[indices[(i * 3) + 2]].Pos.x;
+                vecY = vertices[indices[(i * 3)]].Pos.y - vertices[indices[(i * 3) + 2]].Pos.y;
+                vecZ = vertices[indices[(i * 3)]].Pos.z - vertices[indices[(i * 3) + 2]].Pos.z;
+                edge1 = XMVectorSet(vecX, vecY, vecZ, 0.0f);    //Create our first edge
+
+                //Get the vector describing another edge of our triangle (edge 2,1)
+                vecX = vertices[indices[(i * 3) + 2]].Pos.x - vertices[indices[(i * 3) + 1]].Pos.x;
+                vecY = vertices[indices[(i * 3) + 2]].Pos.y - vertices[indices[(i * 3) + 1]].Pos.y;
+                vecZ = vertices[indices[(i * 3) + 2]].Pos.z - vertices[indices[(i * 3) + 1]].Pos.z;
+                edge2 = XMVectorSet(vecX, vecY, vecZ, 0.0f);    //Create our second edge
+
+                //Cross multiply the two edge vectors to get the un-normalized face normal
+                XMStoreFloat3(&unnormalized, XMVector3Cross(edge1, edge2));
+                tempNormal.push_back(unnormalized);            //Save unormalized normal (for normal averaging)
+            }
+
+            //Compute vertex normals (normal Averaging)
+            XMVECTOR normalSum = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+            int facesUsing = 0;
+            float tX;
+            float tY;
+            float tZ;
+
+            //Go through each vertex
+            for (int i = 0; i < totalVerts; ++i)
+            {
+                //Check which triangles use this vertex
+                for (int j = 0; j < meshTriangles; ++j)
+                {
+                    if (indices[j * 3] == i ||
+                        indices[(j * 3) + 1] == i ||
+                        indices[(j * 3) + 2] == i)
+                    {
+                        tX = XMVectorGetX(normalSum) + tempNormal[j].x;
+                        tY = XMVectorGetY(normalSum) + tempNormal[j].y;
+                        tZ = XMVectorGetZ(normalSum) + tempNormal[j].z;
+
+                        normalSum = XMVectorSet(tX, tY, tZ, 0.0f);    //If a face is using the vertex, add the unormalized face normal to the normalSum
+                        facesUsing++;
+                    }
+                }
+
+                //Get the actual normal by dividing the normalSum by the number of faces sharing the vertex
+                normalSum = normalSum / facesUsing;
+
+                //Normalize the normalSum vector
+                normalSum = XMVector3Normalize(normalSum);
+
+                //Store the normal in our current vertex
+                vertices[i].Normal.x = XMVectorGetX(normalSum);
+                vertices[i].Normal.y = XMVectorGetY(normalSum);
+                vertices[i].Normal.z = XMVectorGetZ(normalSum);
+
+                //Clear normalSum and facesUsing for next vertex
+                normalSum = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+                facesUsing = 0;
+
+            }
+        }
+
+        //Buffer
+        ////Create index buffer
+        //D3D11_BUFFER_DESC indexBufferDesc;
+        //ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+
+        //indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+        //indexBufferDesc.ByteWidth = sizeof(DWORD) * meshTriangles * 3;
+        //indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        //indexBufferDesc.CPUAccessFlags = 0;
+        //indexBufferDesc.MiscFlags = 0;
+
+        //D3D11_SUBRESOURCE_DATA iinitData;
+
+        //iinitData.pSysMem = &indices[0];
+        //d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, indexBuff);
+
+        ////Create Vertex Buffer
+        //D3D11_BUFFER_DESC vertexBufferDesc;
+        //ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+        //vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+        //vertexBufferDesc.ByteWidth = sizeof(Vertex) * totalVerts;
+        //vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        //vertexBufferDesc.CPUAccessFlags = 0;
+        //vertexBufferDesc.MiscFlags = 0;
+
+        //D3D11_SUBRESOURCE_DATA vertexBufferData;
+
+        //ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+        //vertexBufferData.pSysMem = &vertices[0];
+        //hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, vertBuff);
+
+
+        
+        // vertices, indices
+        // my
+        //
+
+        //
+        // Pack the indices of all the meshes into one index buffer.
+        //
+
+        const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+
+        const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
+
+        auto geo = std::make_unique<MeshGeometry>();
+        geo->Name = modelname + "Geo";
+
+        ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+        CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+        ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+        CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+        geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+            mCommandList, vertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+        geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+            mCommandList, indices.data(), ibByteSize, geo->IndexBufferUploader);
+
+        geo->VertexByteStride = sizeof(Vertex);
+        geo->VertexBufferByteSize = vbByteSize;
+        geo->IndexFormat = DXGI_FORMAT_R32_UINT;
+        geo->IndexBufferByteSize = ibByteSize;
+
+        SubmeshGeometry submesh;
+        submesh.IndexCount = (UINT)indices.size();
+        submesh.StartIndexLocation = 0;
+        submesh.BaseVertexLocation = 0;
+        //submesh.Bounds = bounds;
+
+        geo->DrawArgs[modelname] = submesh;
+        mSubmeshGeoList.push_back(std::make_pair(modelname, geo->Name));
+
+        geometryMap[geo->Name] = std::move(geo);
+        return;
 }

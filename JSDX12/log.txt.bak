@@ -1,0 +1,24 @@
+[INFO]  Nov 02 2022 05:23:06 [GeoMetryClass::BuildGeomatries:21] : info
+[INFO]  Nov 02 2022 05:23:54 [GeoMetryClass::BuildGeomatries:21] : info
+[INFO]  Nov 02 2022 05:37:43 [GeoMetryClass::BuildGeomatries:21] : Thu Jan  1 09:00:00 1970
+
+[INFO]  Nov 02 2022 05:41:03 [GeoMetryClass::BuildGeomatries:22] : 0.000000
+[INFO]  Nov 02 2022 05:41:52 [GeoMetryClass::BuildGeomatries:26] : 0.000000
+[INFO]  Nov 02 2022 05:42:19 [GeoMetryClass::BuildGeomatries:36] : -4.000000
+[INFO]  Nov 02 2022 05:42:42 [GeoMetryClass::BuildGeomatries:36] : 3.000000
+[INFO]  Nov 02 2022 05:43:03 [GeoMetryClass::BuildGeomatries:36] : 4.000000
+[INFO]  Nov 02 2022 05:44:30 [GeoMetryClass::BuildGeomatries:36] : 3556.000000
+[INFO]  Nov 02 2022 05:45:03 [GeoMetryClass::BuildGeomatries:36] : 3.511000
+[INFO]  Nov 02 2022 05:48:16 [GeoMetryClass::BuildGeomatries:23] : original0.003000
+[INFO]  Nov 02 2022 05:48:17 [GeoMetryClass::BuildGeomatries:30] : skull0.689000
+[INFO]  Nov 02 2022 05:49:11 [GeoMetryClass::BuildGeomatries:21] : original : 0.003000
+[INFO]  Nov 02 2022 05:49:12 [GeoMetryClass::BuildGeomatries:28] : skull : 0.667000
+[INFO]  Nov 02 2022 05:51:09 [GeoMetryClass::BuildGeomatries:20] : original : 0.003000
+[INFO]  Nov 02 2022 05:51:09 [GeoMetryClass::BuildGeomatries:25] : skull : 0.663000
+[INFO]  Nov 02 2022 05:51:09 [GeoMetryClass::BuildGeomatries:30] : car : 0.029000
+[INFO]  Nov 02 2022 05:51:10 [GeoMetryClass::BuildGeomatries:35] : teapot : 0.580000
+[INFO]  Nov 02 2022 05:51:10 [GeoMetryClass::BuildGeomatries:40] : ground : 0.431000
+[INFO]  Nov 02 2022 05:51:10 [GeoMetryClass::BuildGeomatries:45] : suzanne : 0.054000
+[INFO]  Nov 02 2022 05:51:11 [GeoMetryClass::BuildGeomatries:50] : spot : 0.683000
+[INFO]  Nov 02 2022 05:51:12 [GeoMetryClass::BuildGeomatries:55] : rammer : 1.082000
+[INFO]  Nov 02 2022 05:51:12 [GeoMetryClass::BuildGeomatries:60] : tree : 0.001000

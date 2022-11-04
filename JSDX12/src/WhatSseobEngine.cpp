@@ -19,7 +19,7 @@ Engine::Engine(HINSTANCE hInstance)
 	// the world space origin.  In general, you need to loop over every world space vertex
 	// position and compute the bounding sphere.
 	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	mSceneBounds.Radius = sqrtf(10.0f * 10.0f + 15.0f * 15.0f);
+	mSceneBounds.Radius = sqrtf(50.0f * 50.0f + 75.0f * 75.0f);
 }
 
 
@@ -172,7 +172,7 @@ void Engine::Update(const GameTimer& gt)
 	// Animate the lights (and hence shadows).
 	//
 
-	mLightRotationAngle += 0.1f * gt.DeltaTime();
+	//mLightRotationAngle += 0.1f * gt.DeltaTime();
 
 	XMMATRIX R = XMMatrixRotationY(mLightRotationAngle);
 	for (int i = 0; i < 3; ++i)
@@ -471,6 +471,8 @@ void Engine::OnKeyboardInput(const GameTimer& gt)
 		Editor.ChangeMode(3);
 	if (GetAsyncKeyState('4') & 0x0001)
 		Editor.ChangeMode(4);
+	if (GetAsyncKeyState('5') & 0x0001)
+		Editor.ChangeMode(5);
 
 	mCamera.UpdateViewMatrix();
 }
@@ -537,7 +539,7 @@ void Engine::UpdateShadowTransform(const GameTimer& gt)
 {
 	// Only the first "main" light casts a shadow.
 	XMVECTOR lightDir = XMLoadFloat3(&mRotatedLightDirections[0]);
-	XMVECTOR lightPos = -2.0f * mSceneBounds.Radius * lightDir;
+	XMVECTOR lightPos = -10.0f * mSceneBounds.Radius * lightDir;
 	XMVECTOR targetPos = XMLoadFloat3(&mSceneBounds.Center);
 	XMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX lightView = XMMatrixLookAtLH(lightPos, targetPos, lightUp);
@@ -756,7 +758,7 @@ void Engine::BuildRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE texTable1;
 	texTable1.Init(
 		D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-		32,  // number of descriptors
+		36,  // number of descriptors
 		3, // register t0
 		0); 
 
@@ -880,7 +882,7 @@ void Engine::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 32;
+	srvHeapDesc.NumDescriptors = 36;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -905,9 +907,18 @@ void Engine::BuildDescriptorHeaps()
 		mTextures->GetResource("tileTexN"),
 		mTextures->GetResource("checkboardTex"),
 		mTextures->GetResource("iceTex"),
+		mTextures->GetResource("sample"),
+		mTextures->GetResource("wood"),
+		mTextures->GetResource("woodN"),
+		mTextures->GetResource("Polygon"),
+		mTextures->GetResource("grass1"),
+		mTextures->GetResource("grass1N"),
+		mTextures->GetResource("octostone"),
+		mTextures->GetResource("octostoneN"),
 	};
 	auto treeArrayTex = mTextures->GetResource("treeArrayTex");
 	auto skyTex = mTextures->GetResource("skyCubeMap");
+	auto skydesertTex = mTextures->GetResource("skyCubeMapDesert");
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -945,7 +956,17 @@ void Engine::BuildDescriptorHeaps()
 	srvDesc.Format = skyTex->GetDesc().Format;
 	md3dDevice->CreateShaderResourceView(skyTex.Get(), &srvDesc, hDescriptor);
 
-	mSkyTexHeapIndex = (UINT)tex2DList.size() + 1;
+	// next descriptor
+	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
+
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	srvDesc.TextureCube.MostDetailedMip = 0;
+	srvDesc.TextureCube.MipLevels = skydesertTex->GetDesc().MipLevels;
+	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	srvDesc.Format = skydesertTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(skydesertTex.Get(), &srvDesc, hDescriptor);
+
+	mSkyTexHeapIndex = (UINT)tex2DList.size() + 2;
 	mShadowMapHeapIndex = mSkyTexHeapIndex + 1;
 	mSsaoHeapIndexStart = mShadowMapHeapIndex + 1;
 	mSsaoAmbientMapIndex = mSsaoHeapIndexStart + 3;
@@ -1402,7 +1423,7 @@ void Engine::BuildFrameResources()
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
 		mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-			8, (UINT)mRenderItems->GetAllRiems().size(), (UINT)mMaterials->GetMaterialSize()));
+			8, 128, (UINT)mMaterials->GetMaterialSize()));
 	}
 }
 
@@ -1736,6 +1757,15 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		ImGui::Text("Mouse Mover vx vy : %.1f , %.1f ", vx, vy);
 		ImGui::Text("Mouse Mover P : %.1f , %.1f ", P(0, 0), P(1, 1));
 
+		static char str0[128] = "name";
+		ImGui::InputText("add object name", str0, IM_ARRAYSIZE(str0));
+		std::string name(str0);
+		if (ImGui::Button("Add Object"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			mRenderItems.get()->AddRenderItem(&mMaterials, &mGeometries, name);
+
+		if (ImGui::Button("Delete Object"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			mRenderItems.get()->DeleteRenderItem(&imguidata);
+
 		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
 			counter++;
 		ImGui::SameLine();
@@ -1790,10 +1820,14 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		ImGui::Begin("Selected Object", &imguidata.isSelected);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 		ImGui::Text("Name : %s", imguidata.pickedData.name.c_str());
 		ImGui::Checkbox("visible", &imguidata.pickedData.isVisible);
-		ImGui::SliderFloat3("position", &imguidata.pickedData.position[0], -10.0f, 10.0f);
-		ImGui::SliderFloat3("scale", &imguidata.pickedData.scale[0], 0.01f, 10.0f);
-		ImGui::SliderFloat3("rot", &imguidata.pickedData.rotation[0], -3.14f, 3.14f);
-		ImGui::SliderFloat3("texscale", &imguidata.pickedData.texscale[0], 0.01f, 10.0f);
+		ImGui::InputFloat3("position", &imguidata.pickedData.position[0]);
+		ImGui::InputFloat3("scale", &imguidata.pickedData.scale[0]);
+		for (int i = 0; i < 3; i++)
+			imguidata.pickedData.scale[i] = max(imguidata.pickedData.scale[i], 0.01f);
+		ImGui::InputFloat3("rot", &imguidata.pickedData.rotation[0]);
+		ImGui::InputFloat3("texscale", &imguidata.pickedData.texscale[0]);
+		for (int i = 0; i < 3; i++)
+			imguidata.pickedData.texscale[i] = max(imguidata.pickedData.texscale[i], 0.01f);
 
 
 		ImGui::Combo(

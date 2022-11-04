@@ -13,7 +13,7 @@ public:
 
 	RenderItem LoadItem();
 	void SaveToJson(std::vector<std::shared_ptr<RenderItem>> items);
-	void LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, std::vector<RenderItem*> layers[], std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
+	void LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, std::vector<RenderItem*> layers[], std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, UINT *lastID);
 
 private:
 	//Json::Value root;

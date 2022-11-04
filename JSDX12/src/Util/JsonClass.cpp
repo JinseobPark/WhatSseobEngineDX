@@ -100,7 +100,7 @@ void JsonClass::SaveToJson(std::vector<std::shared_ptr<RenderItem>> items)
 	outFile << root;
 }
 
-void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, std::vector<RenderItem*> layers[], std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
+void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, std::vector<RenderItem*> layers[], std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, UINT* lastID)
 {
 
 	Json::Value root;
@@ -129,7 +129,7 @@ void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, st
 		anItem->SubmeshName = item["SubGeo"].asString();
 		anItem->Visible = item["Visible"].asBool();
 		anItem->mLayer = static_cast<RenderLayer>(item["Layer"].asInt());
-		anItem->ObjCBIndex = item["ID"].asInt();
+		anItem->ObjCBIndex = (*lastID)++;// item["ID"].asInt();
 
 		anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		if(anItem->SubmeshName == "points") anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;

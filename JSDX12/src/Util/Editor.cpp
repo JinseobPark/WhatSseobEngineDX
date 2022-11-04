@@ -48,7 +48,12 @@ void EditClass::ChangeMode(int input)
 				currMode = EditModes::ROTATION_X;
 			return;
 		}
-		default : currMode = EditModes::PICK;
+		case 5:
+		{
+			currMode = EditModes::NONE;
+			return;
+		}
+		default : currMode = EditModes::NONE;
 
 	}
 }

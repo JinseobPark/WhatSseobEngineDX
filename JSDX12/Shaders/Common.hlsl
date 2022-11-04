@@ -101,6 +101,8 @@ cbuffer cbPass : register(b1)
 //---------------------------------------------------------------------------------------
 float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float3 tangentW)
 {
+    if (tangentW.x + tangentW.y + tangentW.z == 0)
+        return unitNormalW;
 	// Uncompress each component from [0,1] to [-1,1].
     float3 normalT = 2.0f * normalMapSample - 1.0f;
 

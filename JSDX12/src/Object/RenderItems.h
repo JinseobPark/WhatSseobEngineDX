@@ -31,11 +31,16 @@ public:
 	void SaveItemsToJson(ImguiData* data);
 	void LoadItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, ImguiData* data);
 
+	void AddRenderItem(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries, std::string name);
+
+	void DeleteRenderItem(ImguiData* data);
+
 	RenderItem* GetPickedItem();
 	RenderItem* GetPickedVewItem();
 
 
 private:
+	UINT objCBIndex = 0;
 
 	// List of all the render items.
 	std::vector<std::shared_ptr<RenderItem>> mAllRitems;

@@ -111,4 +111,6 @@ private:
 	void BuildShapeGeometry();
 	void BuildTreeSpritesGeometry();
 	void BuildCarGeometry();
+	void BuildModelGeometryOri(std::string filename, std::string modelname);
+	void BuildModelGeometry(std::string filename, std::string modelname);
 };
