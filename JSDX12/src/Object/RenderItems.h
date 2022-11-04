@@ -17,7 +17,6 @@ public:
 
 	void BuildRenderItems(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
 	void BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
-	//void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems, FrameResource* curFrames);
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, int layer, FrameResource* curFrames);
 
 	std::vector<std::shared_ptr<RenderItem>> GetAllRiems();

@@ -479,9 +479,8 @@ void Graphics::RenderDeferredToTexture()
 
 	// Clear render buffer
 	m_DeferredBuffers->ClearRenderTargets(m_Direct3D->GetDeviceContext(), 0, 0, 0, 1.0f);
-	//m_DeferredBuffers->ClearRenderTargets(m_Direct3D->GetDeviceContext(), g_data->clear_color[0], g_data->clear_color[1], g_data->clear_color[2], 1.0f);
 
-	//Render something
+	//Render 
 	RenderTessellation(RenderType::DEFERRED);
 
 	RenderBillboard(RenderType::DEFERRED);
@@ -620,33 +619,12 @@ void Graphics::RenderNormal()
 void Graphics::MakeShadow()
 {
 	m_shadowNum = 0;
-	//for (auto shadowTexture : m_ShadowTextures)
-	//{
-	//	shadowTexture.first->SetRenderTarget(m_Direct3D->GetDeviceContext());
-
-	//	shadowTexture.first->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
-	//	//RenderTessellation(RenderType::SHADOW);
-
-	//	//RenderBillboard(RenderType::SHADOW);
-
-	//	RenderModelInstances(RenderType::SHADOW);
-
-	//	RenderModels(RenderType::SHADOW);
-
-
-	//	m_Direct3D->SetBackBufferRenderTarget();
-	//	m_Direct3D->ResetViewport();
-	//	m_shadowNum++;
-	//}
 
 	for (int i = 0; i < m_dirLights.size(); i++)
 	{
 		m_ShadowTexture->SetRenderTarget(m_Direct3D->GetDeviceContext(), i);
 
 		m_ShadowTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f, i);
-		//RenderTessellation(RenderType::SHADOW);
-
-		//RenderBillboard(RenderType::SHADOW);
 
 		RenderModels(RenderType::SHADOW);
 

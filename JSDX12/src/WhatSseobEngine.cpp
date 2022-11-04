@@ -1712,7 +1712,6 @@ void Engine::ImguiLoadInfo()
 void Engine::ImguiUpdate(const GameTimer& gt)
 {
 	// Our state
-	bool show_demo_window = true;
 	bool show_another_window = imguidata.isSelected;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -1738,24 +1737,15 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 		XMMATRIX V = mCamera.GetView();
 		XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(V), V);
 
-		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+		ImGui::Begin("WhatSseob Engine Editor!");                          // Create a window called "Hello, world!" and append into it.
 
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
 		ImGui::Checkbox("Material Window", &imguidata.materialWindow);      // Edit bools storing our window open/close state
-		//ImGui::Checkbox("Another Window", &show_another_window);
-
 		ImGui::Checkbox("Debug", &imguidata.isShowDebug);
 		ImGui::Checkbox("selected", &imguidata.isSelected);
 
-		ImGui::Text("Curr mode %d ", (int)Editor.GetCurrMode());
-
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+		ImGui::Text("Curr Edit mode %d ", (int)Editor.GetCurrMode());
 
 		ImGui::Text("Mouse Mover : %.1f , %.1f ", imguidata.pickposition.x, imguidata.pickposition.y);
-		ImGui::Text("Mouse Mover vx vy : %.1f , %.1f ", vx, vy);
-		ImGui::Text("Mouse Mover P : %.1f , %.1f ", P(0, 0), P(1, 1));
 
 		static char str0[128] = "name";
 		ImGui::InputText("add object name", str0, IM_ARRAYSIZE(str0));
@@ -1765,11 +1755,6 @@ void Engine::ImguiUpdate(const GameTimer& gt)
 
 		if (ImGui::Button("Delete Object"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
 			mRenderItems.get()->DeleteRenderItem(&imguidata);
-
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
 
 		if (ImGui::Button("Save"))
 		{

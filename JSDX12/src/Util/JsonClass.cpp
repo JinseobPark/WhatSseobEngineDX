@@ -28,24 +28,6 @@ void JsonClass::JsonTest()
 
 void JsonClass::JsonReadTest()
 {
-	//Json::Value root;
-	//Json::Reader reader;
-	//ifstream json("Resources/test.json", ifstream::binary);
-
-	//reader.parse(json, root);
-
-	//for (auto& value : root)
-	//	cout << value << endl;
-
-	//for (auto& value : root["string_key"])
-	//	cout << value.asString() << endl;
-
-	//for (auto& value : root["integer_key"])
-	//	cout << value.asInt() << endl;
-
-	//cout << root.get("string_key", "UTF-8");
-
-
 	Json::Value root;
 	std::ifstream ifs;
 	ifs.open("Resources/test.json");
@@ -129,7 +111,7 @@ void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, st
 		anItem->SubmeshName = item["SubGeo"].asString();
 		anItem->Visible = item["Visible"].asBool();
 		anItem->mLayer = static_cast<RenderLayer>(item["Layer"].asInt());
-		anItem->ObjCBIndex = (*lastID)++;// item["ID"].asInt();
+		anItem->ObjCBIndex = (*lastID)++;
 
 		anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		if(anItem->SubmeshName == "points") anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
@@ -145,28 +127,6 @@ void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, st
 	}
 
 
-	/*
-	
-	auto skyRitem = std::make_unique<RenderItem>();
-	skyRitem->name = "skybox";
-	skyRitem->wScale = Vector3(5000.0f, 5000.0f, 5000.0f);
-	XMStoreFloat4x4(&skyRitem->World, MakeMatrixWorld(skyRitem->wRot, skyRitem->wScale, skyRitem->wTrans));
-	XMStoreFloat4x4(&skyRitem->TexTransform, MakeMatrixTex(skyRitem->TexScale));
-	//XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(skyRitem->wScale.x, skyRitem->wScale.y, skyRitem->wScale.z));
-	//skyRitem->TexTransform = MathHelper::Identity4x4();
-	skyRitem->ObjCBIndex = objCBIndex++;
-	skyRitem->Mat = materials->get()->GetMaterial("sky");
-	skyRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
-	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;	
-	skyRitem->Geo->SubmeshName = "sphere";
-	skyRitem->IndexCount = skyRitem->Geo->DrawArgs[skyRitem->Geo->SubmeshName].IndexCount;
-	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs[skyRitem->Geo->SubmeshName].StartIndexLocation;
-	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs[skyRitem->Geo->SubmeshName].BaseVertexLocation;
-	skyRitem->mLayer = RenderLayer::Sky;
-
-	mRitemLayer[(int)skyRitem->mLayer].push_back(skyRitem.get());
-	mAllRitems.push_back(std::move(skyRitem));
-	*/
 }
 
 

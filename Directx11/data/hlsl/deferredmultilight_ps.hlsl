@@ -150,19 +150,8 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
             float depthV = shadow[i].Sample(SampleTypeWrap, ptex).x + 0.01f;
             depthV = (lspos.z < depthV) ? 1 : 0;
             
-            //float2 depthV = shadow[i].Sample(SampleTypeWrap, ptex).xy;
-            
-            //float shadow = ShadowVariance(depthV, d);
-            
-            
             result += depthV * CalcDirLight(dirlight[i], normals, colors);
         }
-        //{
-        //    result += depthV * CalcDirLight(dirlight[i], normals, colors);
-        //}
-        
-        // dir light with shadow
-        //result += CalcDirLight(dirlight[1], normals, colors);
         
         //point light calculation
         for (int i = 0; i < pointCount; i++)

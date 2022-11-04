@@ -700,3 +700,11 @@
 [INFO]  Nov 04 2022 08:02:31 [GeoMetryClass::BuildGeomatries:128] : hangar1 : 0.073000
 [INFO]  Nov 04 2022 08:02:31 [GeoMetryClass::BuildGeomatries:133] : boarding_ladder : 0.117000
 [INFO]  Nov 04 2022 08:02:31 [GeoMetryClass::BuildGeomatries:139] : tree : 0.001000
+[INFO]  Nov 04 2022 23:39:15 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 5.090000
+[INFO]  Nov 04 2022 23:44:55 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.864000
+[INFO]  Nov 04 2022 23:45:16 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.939000
+[INFO]  Nov 04 2022 23:48:34 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.764000
+[INFO]  Nov 04 2022 23:52:23 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.804000
+[INFO]  Nov 05 2022 01:07:49 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.880000
+[INFO]  Nov 05 2022 01:24:30 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.753000
+[INFO]  Nov 05 2022 06:07:44 [GeoMetryClass::BuildGeomatries:43] : Load Model time : 4.802000

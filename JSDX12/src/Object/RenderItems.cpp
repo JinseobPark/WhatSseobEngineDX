@@ -135,8 +135,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		leftCylRitem->wTrans = Vector3(-5.0f, 1.5f, -10.0f + i * 5.0f);
 		XMStoreFloat4x4(&leftCylRitem->World, MakeMatrixWorld(leftCylRitem->wRot, leftCylRitem->wScale, leftCylRitem->wTrans));
 		XMStoreFloat4x4(&leftCylRitem->TexTransform, MakeMatrixTex(leftCylRitem->TexScale));
-		//XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
-		//XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
 		leftCylRitem->ObjCBIndex = objCBIndex++;
 		leftCylRitem->Mat = materials->get()->GetMaterial("bricks1");
 		leftCylRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -151,8 +149,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		rightCylRitem->wTrans = Vector3(+5.0f, 1.5f, -10.0f + i * 5.0f);
 		XMStoreFloat4x4(&rightCylRitem->World, MakeMatrixWorld(rightCylRitem->wRot, rightCylRitem->wScale, rightCylRitem->wTrans));
 		XMStoreFloat4x4(&rightCylRitem->TexTransform, MakeMatrixTex(rightCylRitem->TexScale));
-		//XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
-		//XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
 		rightCylRitem->ObjCBIndex = objCBIndex++;
 		rightCylRitem->Mat = materials->get()->GetMaterial("bricks0");
 		rightCylRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -168,8 +164,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		leftSphereRitem->wTrans = Vector3(-5.0f, 3.5f, -10.0f + i * 5.0f);
 		XMStoreFloat4x4(&leftSphereRitem->World, MakeMatrixWorld(leftSphereRitem->wRot, leftSphereRitem->wScale, leftSphereRitem->wTrans));
 		XMStoreFloat4x4(&leftSphereRitem->TexTransform, MakeMatrixTex(leftSphereRitem->TexScale));
-		//XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
-		//leftSphereRitem->TexTransform = MathHelper::Identity4x4();
 		leftSphereRitem->ObjCBIndex = objCBIndex++;
 		leftSphereRitem->Mat = materials->get()->GetMaterial("stone0");
 		leftSphereRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -184,8 +178,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		rightSphereRitem->wTrans = Vector3(+5.0f, 3.5f, -10.0f + i * 5.0f);
 		XMStoreFloat4x4(&rightSphereRitem->World, MakeMatrixWorld(rightSphereRitem->wRot, rightSphereRitem->wScale, rightSphereRitem->wTrans));
 		XMStoreFloat4x4(&rightSphereRitem->TexTransform, MakeMatrixTex(rightSphereRitem->TexScale));
-		//XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
-		//rightSphereRitem->TexTransform = MathHelper::Identity4x4();
 		rightSphereRitem->ObjCBIndex = objCBIndex++;
 		rightSphereRitem->Mat = materials->get()->GetMaterial("mirror0");
 		rightSphereRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -201,11 +193,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 		mRitemLayer[(int)leftSphereRitem->mLayer].push_back(leftSphereRitem.get());
 		mRitemLayer[(int)rightSphereRitem->mLayer].push_back(rightSphereRitem.get());
 
-		//mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
-		//mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
-		//mRitemLayer[(int)RenderLayer::Transparent].push_back(leftSphereRitem.get());
-		//mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
-
 		mAllRitems.push_back(std::move(leftCylRitem));
 		mAllRitems.push_back(std::move(rightCylRitem));
 		mAllRitems.push_back(std::move(leftSphereRitem));
@@ -215,7 +202,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	auto treeSpritesRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&treeSpritesRitem->World, MakeMatrixWorld(treeSpritesRitem->wRot, treeSpritesRitem->wScale, treeSpritesRitem->wTrans));
 	XMStoreFloat4x4(&treeSpritesRitem->TexTransform, MakeMatrixTex(treeSpritesRitem->TexScale));
-	//treeSpritesRitem->World = MathHelper::Identity4x4();
 	treeSpritesRitem->name = "tree";
 	treeSpritesRitem->ObjCBIndex = objCBIndex++;
 	treeSpritesRitem->Mat = materials->get()->GetMaterial("defaultMat");
@@ -239,8 +225,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	carRitem2->TexScale = Vector3(4.0f, 4.0f, 1.0f);
 	XMStoreFloat4x4(&carRitem2->World, MakeMatrixWorld(carRitem2->wRot, carRitem2->wScale, carRitem2->wTrans));
 	XMStoreFloat4x4(&carRitem2->TexTransform, MakeMatrixTex(carRitem2->TexScale));
-	//XMStoreFloat4x4(&carRitem2->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(-5.0f, 2.0f, 0.0f));
-	//XMStoreFloat4x4(&carRitem2->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
 	carRitem2->name = "car2";
 	carRitem2->ObjCBIndex = objCBIndex++;
 	carRitem2->Mat = materials->get()->GetMaterial("tile0");
@@ -261,8 +245,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	carRitem->TexScale = Vector3(4.0f, 4.0f, 1.0f);
 	XMStoreFloat4x4(&carRitem->World, MakeMatrixWorld(carRitem->wRot, carRitem->wScale, carRitem->wTrans));
 	XMStoreFloat4x4(&carRitem->TexTransform, MakeMatrixTex(carRitem->TexScale));
-	//XMStoreFloat4x4(&carRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixTranslation(0.0f, 5.0f, 0.0f));
-	//XMStoreFloat4x4(&carRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
 	carRitem->name = "car1";
 	carRitem->ObjCBIndex = objCBIndex++;
 	carRitem->Mat = materials->get()->GetMaterial("mirror0");
@@ -283,8 +265,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	mirrorRitem->TexScale = Vector3(4.0f, 4.0f, 1.0f);
 	XMStoreFloat4x4(&mirrorRitem->World, MakeMatrixWorld(mirrorRitem->wRot, mirrorRitem->wScale, mirrorRitem->wTrans));
 	XMStoreFloat4x4(&mirrorRitem->TexTransform, MakeMatrixTex(mirrorRitem->TexScale));
-	//XMStoreFloat4x4(&mirrorRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(4.0f, 4.0f, 0.0f));
-	//XMStoreFloat4x4(&mirrorRitem->TexTransform, XMMatrixScaling(4.0f, 4.0f, 1.0f));
 	mirrorRitem->name = "mirror";
 	mirrorRitem->ObjCBIndex = objCBIndex++;
 	mirrorRitem->Mat = materials->get()->GetMaterial("mirror0");
@@ -334,32 +314,6 @@ void RenderItemClass::BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* m
 	mPickedRitemview = mRitemLayer[(int)RenderLayer::Highlight][0];
 }
 
-//void RenderItemClass::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems, FrameResource* curFrames)
-//{
-//	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-//
-//	auto objectCB = curFrames->ObjectCB->Resource();
-//
-//	// For each render item...
-//	for (size_t i = 0; i < ritems.size(); ++i)
-//	{
-//		auto ri = ritems[i];
-//
-//		if (ri->Visible == false)
-//			continue;
-//
-//		cmdList->IASetVertexBuffers(0, 1, &ri->Geo->VertexBufferView());
-//		cmdList->IASetIndexBuffer(&ri->Geo->IndexBufferView());
-//		cmdList->IASetPrimitiveTopology(ri->PrimitiveType);
-//
-//		D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
-//
-//		cmdList->SetGraphicsRootConstantBufferView(0, objCBAddress);
-//
-//		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-//	}
-//}
-
 void RenderItemClass::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, int layer, FrameResource* curFrames)
 {
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
@@ -393,7 +347,6 @@ std::vector<std::shared_ptr<RenderItem>> RenderItemClass::GetAllRiems()
 
 void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height, ImguiData* data)
 {
-	bool isPass = false;
 	XMFLOAT4X4 P = camera.GetProj4x4f();
 
 	// Compute picking ray in view space.
@@ -415,7 +368,6 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 	mPickedRitem = nullptr;
 
 	float tmax = 65536.0f;
-	// Check if we picked an opaque render item.  A real app might keep a separate "picking list"
 	// of objects that can be selected.   
 	std::vector<RenderItem*> canpicked;
 	canpicked.reserve(mRitemLayer[(int)RenderLayer::Opaque].size() + mRitemLayer[(int)RenderLayer::Transparent].size() + mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].size());
@@ -424,22 +376,10 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::Transparent].begin(), mRitemLayer[(int)RenderLayer::Transparent].end());
 	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].begin(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].end());
 	//for (auto ri : mRitemLayer[(int)RenderLayer::Opaque])
-	for (auto ri : canpicked)
+	for (auto pickeditem : canpicked)
 	{
-		//auto geo = ri->Geo;
-
-		// Skip invisible render-items.
-		//if (ri->Visible == false)
-		//	continue;
-
-		XMMATRIX W = XMLoadFloat4x4(&ri->World);
+		XMMATRIX W = XMLoadFloat4x4(&pickeditem->World);
 		XMMATRIX invWorld = XMMatrixInverse(&XMMatrixDeterminant(W), W);
-
-		//rayOrigin = XMVector3TransformCoord(rayOrigin, invWorld);
-		//rayDir = XMVector3TransformNormal(rayDir, invWorld);
-
-		//// Tranform ray to vi space of Mesh.
-		//XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
 
 		XMVECTOR newrayOrigin = XMVector3TransformCoord(rayOrigin, invWorld);
 		XMVECTOR newrayDir = XMVector3TransformNormal(rayDir, invWorld);
@@ -447,13 +387,8 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 		// Make the ray direction unit length for the intersection tests.
 		newrayDir = XMVector3Normalize(newrayDir);
 
-		// If we hit the bounding box of the Mesh, then we might have picked a Mesh triangle,
-		// so do the ray/triangle tests.
-		//
-		// If we did not hit the bounding box, then it is impossible that we hit 
-		// the Mesh, so do not waste effort doing ray/triangle tests.
 		float distance = 0.0f;
-		if (ri->Bounds.Intersects(newrayOrigin, newrayDir, distance))
+		if (pickeditem->Bounds.Intersects(newrayOrigin, newrayDir, distance))
 		{
 			if (distance < tmax)
 			{
@@ -462,24 +397,22 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 				mPickedRitemview->Visible = true;
 
 				// Picked render item needs same world matrix as object picked.
-				mPickedRitemview->Geo = ri->Geo;
-				mPickedRitemview->World = ri->World;
-				mPickedRitemview->TexTransform = ri->TexTransform;
+				mPickedRitemview->Geo = pickeditem->Geo;
+				mPickedRitemview->World = pickeditem->World;
+				mPickedRitemview->TexTransform = pickeditem->TexTransform;
 				mPickedRitemview->NumFramesDirty = gNumFrameResources;
 
 				// Offset to the picked triangle in the mesh index buffer.
-				mPickedRitemview->IndexCount = ri->IndexCount;
-				mPickedRitemview->BaseVertexLocation = ri->BaseVertexLocation;
-				mPickedRitemview->StartIndexLocation = ri->StartIndexLocation;
+				mPickedRitemview->IndexCount = pickeditem->IndexCount;
+				mPickedRitemview->BaseVertexLocation = pickeditem->BaseVertexLocation;
+				mPickedRitemview->StartIndexLocation = pickeditem->StartIndexLocation;
 
-				mPickedRitem = ri;
+				mPickedRitem = pickeditem;
 				data->isSelected = true;
-				//GetPickedItem(data);
 			}
 
 		}
 	}
-
 
 }
 

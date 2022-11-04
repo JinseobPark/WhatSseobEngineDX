@@ -174,7 +174,4 @@ private:
 	std::vector<Material*> combobox_material_items2;
 	std::vector<ImGuiGeos> combobox_geo_items;
 	std::vector<ImGuiLayers> combobox_layer_items;
-	//static int combobox_material_item_current;
-
-	//ImGuiIO io;
 };

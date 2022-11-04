@@ -51,7 +51,7 @@ void GameLogic::Initialize()
 		float x, y, z;
 		ModelInstance* model = (ModelInstance*)sphereInstance->GetComponent(CT_MODEL_INSTANCE);
 		// Add childrens only transform
-		for (int i = 0; i < 200; i++)
+		for (int i = 0; i < 20; i++)
 		{
 			Transform* transformsub = new Transform();
 			x = LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
