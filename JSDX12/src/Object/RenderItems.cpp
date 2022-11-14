@@ -370,11 +370,12 @@ void RenderItemClass::Pick(int sx, int sy, Camera camera, int widht, int height,
 	float tmax = 65536.0f;
 	// of objects that can be selected.   
 	std::vector<RenderItem*> canpicked;
-	canpicked.reserve(mRitemLayer[(int)RenderLayer::Opaque].size() + mRitemLayer[(int)RenderLayer::Transparent].size() + mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].size());
+	canpicked.reserve(mRitemLayer[(int)RenderLayer::Opaque].size() + mRitemLayer[(int)RenderLayer::Transparent].size() + mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].size() + mRitemLayer[(int)RenderLayer::Toon].size());
 	//for(auto items : mRitemLayer[(int)RenderLayer::Opaque
 	canpicked.insert(canpicked.begin(), mRitemLayer[(int)RenderLayer::Opaque].begin(), mRitemLayer[(int)RenderLayer::Opaque].end());
 	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::Transparent].begin(), mRitemLayer[(int)RenderLayer::Transparent].end());
 	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].begin(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors].end());
+	canpicked.insert(canpicked.end(), mRitemLayer[(int)RenderLayer::Toon].begin(), mRitemLayer[(int)RenderLayer::Toon].end());
 	//for (auto ri : mRitemLayer[(int)RenderLayer::Opaque])
 	for (auto pickeditem : canpicked)
 	{
@@ -459,12 +460,13 @@ void RenderItemClass::SetPickedItemOnGui(SelectedObjectDatas data, std::unique_p
 		mPickedRitem->BaseVertexLocation = mPickedRitem->Geo->DrawArgs[mPickedRitem->SubmeshName].BaseVertexLocation;
 		if (data.isLayerChanged)
 		{
-			if (data.layerNum < 3)
+			if (data.layerNum < 4)
 			{
 				mRitemLayer[(int)mPickedRitem->mLayer].erase(std::remove(mRitemLayer[(int)mPickedRitem->mLayer].begin(), mRitemLayer[(int)mPickedRitem->mLayer].end(), mPickedRitem), mRitemLayer[(int)mPickedRitem->mLayer].end());
 				mRitemLayer[data.layerNum].push_back(mPickedRitem);
 				mPickedRitem->mLayer = RenderLayer(data.layerNum);
 			}
+			data.isLayerChanged = false;
 		}
 		
 
@@ -541,12 +543,15 @@ void RenderItemClass::AddRenderItem(std::unique_ptr<MaterialClass>* materials, s
 
 void RenderItemClass::DeleteRenderItem(ImguiData* data)
 {
-	mRitemLayer[(int)mPickedRitem->mLayer].erase(std::remove(mRitemLayer[(int)mPickedRitem->mLayer].begin(), mRitemLayer[(int)mPickedRitem->mLayer].end(), mPickedRitem), mRitemLayer[(int)mPickedRitem->mLayer].end());
-	mAllRitems.erase(std::remove_if(mAllRitems.begin(), mAllRitems.end(), [=](const std::shared_ptr<RenderItem>& item) {return item.get() == mPickedRitem; }), mAllRitems.end());
+	if (mPickedRitem != nullptr)
+	{
+		mRitemLayer[(int)mPickedRitem->mLayer].erase(std::remove(mRitemLayer[(int)mPickedRitem->mLayer].begin(), mRitemLayer[(int)mPickedRitem->mLayer].end(), mPickedRitem), mRitemLayer[(int)mPickedRitem->mLayer].end());
+		mAllRitems.erase(std::remove_if(mAllRitems.begin(), mAllRitems.end(), [=](const std::shared_ptr<RenderItem>& item) {return item.get() == mPickedRitem; }), mAllRitems.end());
 
-	mPickedRitem = nullptr;
-	mPickedRitemview->Visible = false;
-	data->isSelected = false;
+		mPickedRitem = nullptr;
+		mPickedRitemview->Visible = false;
+		data->isSelected = false;
+	}
 }
 
 RenderItem* RenderItemClass::GetPickedItem()

@@ -1,15 +1,83 @@
 {
-	"car1" : 
+	"Car" : 
 	{
 		"Geo" : "carGeo",
+		"ID" : 24,
+		"Layer" : 0,
+		"Mat" : "stone0",
+		"Name" : "Car",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "car",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			1.6973328590393066,
+			1.1995457410812378,
+			-6.1653742790222168
+		],
+		"Visible" : true
+	},
+	"Car2" : 
+	{
+		"Geo" : "air_busGeo",
+		"ID" : 25,
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "Car2",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			4.691373348236084,
+			4.5822935104370117,
+			4.442662239074707
+		],
+		"SubGeo" : "air_bus",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			-6.2613663673400879,
+			1.2780848741531372,
+			-7.9063467979431152
+		],
+		"Visible" : true
+	},
+	"Empty" : 
+	{
+		"Geo" : "dragon2Geo",
 		"ID" : 0,
 		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "car1",
+		"Mat" : "bricks1",
+		"Name" : "Empty",
 		"Rotate" : 
 		[
 			0.0,
-			0.0,
+			2.9725127220153809,
 			0.0
 		],
 		"Scale" : 
@@ -18,62 +86,62 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "car",
+		"SubGeo" : "dragon2",
 		"TexScale" : 
-		[
-			4.0,
-			4.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			8.9105758666992188,
-			2.4430913925170898,
-			0.0
-		],
-		"Visible" : true
-	},
-	"car2" : 
-	{
-		"Geo" : "carGeo",
-		"ID" : 1,
-		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "car2",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
 		[
 			1.0,
 			1.0,
 			1.0
 		],
-		"SubGeo" : "car",
-		"TexScale" : 
-		[
-			4.0,
-			4.0,
-			1.0
-		],
 		"Transform" : 
 		[
-			-8.7525491714477539,
-			2.314164400100708,
-			-3.8789834976196289
+			7.2954792976379395,
+			1.6620569229125977,
+			0.0
 		],
 		"Visible" : true
 	},
-	"centerbox" : 
+	"air_bus" : 
 	{
-		"Geo" : "shapeGeo",
+		"Geo" : "air_busGeo",
 		"ID" : 2,
 		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "centerbox",
+		"Mat" : "Polygon",
+		"Name" : "air_bus",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			3.0,
+			3.0,
+			3.0043632984161377
+		],
+		"SubGeo" : "air_bus",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			13.364853858947754,
+			0.051992777734994888,
+			0.0
+		],
+		"Visible" : true
+	},
+	"airplane" : 
+	{
+		"Geo" : "airplaneGeo",
+		"ID" : 3,
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "airplane",
 		"Rotate" : 
 		[
 			0.0,
@@ -86,7 +154,7 @@
 			2.0,
 			2.0
 		],
-		"SubGeo" : "box",
+		"SubGeo" : "airplane",
 		"TexScale" : 
 		[
 			1.0,
@@ -95,18 +163,188 @@
 		],
 		"Transform" : 
 		[
+			-16.00031852722168,
+			0.57994991540908813,
+			5.8337788581848145
+		],
+		"Visible" : true
+	},
+	"bridge" : 
+	{
+		"Geo" : "bridgeGeo",
+		"ID" : 4,
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "bridge",
+		"Rotate" : 
+		[
 			0.0,
-			1.3439890146255493,
-			-1.0428342819213867
+			0.62286430597305298,
+			0.0
+		],
+		"Scale" : 
+		[
+			2.0,
+			2.0,
+			2.0
+		],
+		"SubGeo" : "bridge",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			-19.512765884399414,
+			0.0040007126517593861,
+			25.145832061767578
+		],
+		"Visible" : true
+	},
+	"building" : 
+	{
+		"Geo" : "houseGeo",
+		"ID" : 5,
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "building",
+		"Rotate" : 
+		[
+			-0.002181661780923605,
+			9.1880645751953125,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "house",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			20.917922973632812,
+			0.017090503126382828,
+			26.291929244995117
+		],
+		"Visible" : true
+	},
+	"car1" : 
+	{
+		"Geo" : "boarding_ladderGeo",
+		"ID" : 6,
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "car1",
+		"Rotate" : 
+		[
+			0.0,
+			1.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			2.0,
+			2.0,
+			2.0
+		],
+		"SubGeo" : "boarding_ladder",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			-5.5065021514892578,
+			0.043263707309961319,
+			8.2641315460205078
+		],
+		"Visible" : true
+	},
+	"chair" : 
+	{
+		"Geo" : "skullGeo",
+		"ID" : 7,
+		"Layer" : 0,
+		"Mat" : "mirror0",
+		"Name" : "chair",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			0.20000000298023224,
+			0.20000000298023224,
+			0.20000000298023224
+		],
+		"SubGeo" : "skull",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			13.369215965270996,
+			1.3086292743682861,
+			0.0
+		],
+		"Visible" : true
+	},
+	"empty" : 
+	{
+		"Geo" : "shapeGeo",
+		"ID" : 8,
+		"Layer" : 0,
+		"Mat" : "mirror0",
+		"Name" : "empty",
+		"Rotate" : 
+		[
+			0.0,
+			3.1983160972595215,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "sphere",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			10.231997489929199,
+			1.439528226852417,
+			-0.17453326284885406
 		],
 		"Visible" : true
 	},
 	"grid" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 3,
+		"ID" : 9,
 		"Layer" : 0,
-		"Mat" : "tile0",
+		"Mat" : "octostone",
 		"Name" : "grid",
 		"Rotate" : 
 		[
@@ -116,236 +354,32 @@
 		],
 		"Scale" : 
 		[
-			12.529555320739746,
-			0.49669420719146729,
-			37.355384826660156
+			100.0,
+			0.14000000059604645,
+			100.0
 		],
 		"SubGeo" : "grid",
 		"TexScale" : 
 		[
-			8.0,
-			8.0,
+			10.0,
+			10.0,
 			1.0
 		],
 		"Transform" : 
 		[
-			0.034906584769487381,
-			0.033230375498533249,
+			0.0,
+			0.0,
 			0.0
 		],
 		"Visible" : true
 	},
-	"leftCy0" : 
+	"house" : 
 	{
-		"Geo" : "shapeGeo",
-		"ID" : 4,
-		"Layer" : 0,
-		"Mat" : "bricks1",
-		"Name" : "leftCy0",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			1.5,
-			-10.0
-		],
-		"Visible" : true
-	},
-	"leftCy1" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 5,
-		"Layer" : 0,
-		"Mat" : "bricks1",
-		"Name" : "leftCy1",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			1.5,
-			-5.0
-		],
-		"Visible" : true
-	},
-	"leftCy2" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 6,
-		"Layer" : 0,
-		"Mat" : "bricks1",
-		"Name" : "leftCy2",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			1.5,
-			0.0
-		],
-		"Visible" : true
-	},
-	"leftCy3" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 7,
-		"Layer" : 0,
-		"Mat" : "bricks1",
-		"Name" : "leftCy3",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			1.5,
-			5.0
-		],
-		"Visible" : true
-	},
-	"leftCy4" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 8,
-		"Layer" : 0,
-		"Mat" : "bricks1",
-		"Name" : "leftCy4",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			1.5,
-			10.0
-		],
-		"Visible" : true
-	},
-	"leftSphere0" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 9,
-		"Layer" : 0,
-		"Mat" : "stone0",
-		"Name" : "leftSphere0",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			3.5,
-			-10.0
-		],
-		"Visible" : true
-	},
-	"leftSphere1" : 
-	{
-		"Geo" : "shapeGeo",
+		"Geo" : "air_building1Geo",
 		"ID" : 10,
 		"Layer" : 0,
-		"Mat" : "stone0",
-		"Name" : "leftSphere1",
+		"Mat" : "Polygon",
+		"Name" : "house",
 		"Rotate" : 
 		[
 			0.0,
@@ -354,11 +388,11 @@
 		],
 		"Scale" : 
 		[
-			1.0,
-			1.0,
-			1.0
+			2.0859999656677246,
+			2.0194168090820312,
+			2.0036733150482178
 		],
-		"SubGeo" : "sphere",
+		"SubGeo" : "air_building1",
 		"TexScale" : 
 		[
 			1.0,
@@ -367,19 +401,19 @@
 		],
 		"Transform" : 
 		[
-			-5.0,
-			3.5,
-			-5.0
+			-0.68068146705627441,
+			0.13489533960819244,
+			26.040323257446289
 		],
 		"Visible" : true
 	},
-	"leftSphere2" : 
+	"light1" : 
 	{
-		"Geo" : "shapeGeo",
+		"Geo" : "lightGeo",
 		"ID" : 11,
-		"Layer" : 1,
-		"Mat" : "stone0",
-		"Name" : "leftSphere2",
+		"Layer" : 0,
+		"Mat" : "Polygon",
+		"Name" : "light1",
 		"Rotate" : 
 		[
 			0.0,
@@ -392,7 +426,7 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "sphere",
+		"SubGeo" : "light",
 		"TexScale" : 
 		[
 			1.0,
@@ -401,19 +435,19 @@
 		],
 		"Transform" : 
 		[
-			-5.0,
-			3.5,
-			0.0
+			-9.1455240249633789,
+			0.021448420360684395,
+			6.850433349609375
 		],
 		"Visible" : true
 	},
-	"leftSphere3" : 
+	"obj" : 
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 12,
-		"Layer" : 1,
+		"Layer" : 0,
 		"Mat" : "stone0",
-		"Name" : "leftSphere3",
+		"Name" : "obj",
 		"Rotate" : 
 		[
 			0.0,
@@ -426,7 +460,7 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "sphere",
+		"SubGeo" : "cylinder",
 		"TexScale" : 
 		[
 			1.0,
@@ -435,53 +469,19 @@
 		],
 		"Transform" : 
 		[
-			-5.0,
-			3.5,
-			5.0
+			-10.0,
+			1.5,
+			3.0
 		],
 		"Visible" : true
 	},
-	"leftSphere4" : 
+	"obj2" : 
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 13,
-		"Layer" : 1,
-		"Mat" : "stone0",
-		"Name" : "leftSphere4",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			-5.0,
-			3.5,
-			10.0
-		],
-		"Visible" : true
-	},
-	"mirror" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 14,
 		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "mirror",
+		"Mat" : "stone0",
+		"Name" : "obj2",
 		"Rotate" : 
 		[
 			0.0,
@@ -494,25 +494,25 @@
 			1.0,
 			1.0
 		],
-		"SubGeo" : "sphere",
+		"SubGeo" : "cylinder",
 		"TexScale" : 
 		[
-			4.0,
-			4.0,
+			1.0,
+			1.0,
 			1.0
 		],
 		"Transform" : 
 		[
-			4.0,
-			4.0,
-			0.0
+			10.0,
+			1.5,
+			3.0
 		],
 		"Visible" : true
 	},
 	"pickitem" : 
 	{
-		"Geo" : "spotGeo",
-		"ID" : 15,
+		"Geo" : "air_busGeo",
+		"ID" : 14,
 		"Layer" : 8,
 		"Mat" : "highlight0",
 		"Name" : "pickitem",
@@ -524,11 +524,11 @@
 		],
 		"Scale" : 
 		[
-			1.0,
-			1.0,
-			1.0
+			4.691373348236084,
+			4.5822935104370117,
+			4.442662239074707
 		],
-		"SubGeo" : "spot",
+		"SubGeo" : "air_bus",
 		"TexScale" : 
 		[
 			1.0,
@@ -537,19 +537,53 @@
 		],
 		"Transform" : 
 		[
-			0.0,
-			5.0,
-			0.0
+			-6.2613663673400879,
+			1.2780848741531372,
+			-7.9063467979431152
 		],
 		"Visible" : false
 	},
-	"rightCy0" : 
+	"plane" : 
+	{
+		"Geo" : "shapeGeo",
+		"ID" : 15,
+		"Layer" : 0,
+		"Mat" : "grass",
+		"Name" : "plane",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			20.0,
+			1.0,
+			15.0
+		],
+		"SubGeo" : "grid",
+		"TexScale" : 
+		[
+			5.0,
+			5.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			0.0,
+			0.10000000149011612,
+			10.092366218566895
+		],
+		"Visible" : true
+	},
+	"road" : 
 	{
 		"Geo" : "shapeGeo",
 		"ID" : 16,
 		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "rightCy0",
+		"Mat" : "tile0",
+		"Name" : "road",
 		"Rotate" : 
 		[
 			0.0,
@@ -558,335 +592,29 @@
 		],
 		"Scale" : 
 		[
+			5.0,
 			1.0,
-			1.0,
-			1.0
+			15.0
 		],
-		"SubGeo" : "cylinder",
+		"SubGeo" : "grid",
 		"TexScale" : 
 		[
-			1.0,
-			1.0,
+			4.0,
+			4.0,
 			1.0
 		],
 		"Transform" : 
 		[
-			5.0,
-			1.5,
-			-10.0
-		],
-		"Visible" : true
-	},
-	"rightCy1" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 17,
-		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "rightCy1",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			1.5,
-			-5.0
-		],
-		"Visible" : true
-	},
-	"rightCy2" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 18,
-		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "rightCy2",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			1.5,
-			0.0
-		],
-		"Visible" : true
-	},
-	"rightCy3" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 19,
-		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "rightCy3",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			1.5,
-			5.0
-		],
-		"Visible" : true
-	},
-	"rightCy4" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 20,
-		"Layer" : 0,
-		"Mat" : "bricks0",
-		"Name" : "rightCy4",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "cylinder",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			1.5,
-			10.0
-		],
-		"Visible" : true
-	},
-	"rightSphere0" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 21,
-		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "rightSphere0",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			3.5,
-			-10.0
-		],
-		"Visible" : true
-	},
-	"rightSphere1" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 22,
-		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "rightSphere1",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			3.5,
-			-5.0
-		],
-		"Visible" : true
-	},
-	"rightSphere2" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 23,
-		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "rightSphere2",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			3.5,
-			0.0
-		],
-		"Visible" : true
-	},
-	"rightSphere3" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 24,
-		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "rightSphere3",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			3.5,
-			5.0
-		],
-		"Visible" : true
-	},
-	"rightSphere4" : 
-	{
-		"Geo" : "shapeGeo",
-		"ID" : 25,
-		"Layer" : 0,
-		"Mat" : "mirror0",
-		"Name" : "rightSphere4",
-		"Rotate" : 
-		[
-			0.0,
-			0.0,
-			0.0
-		],
-		"Scale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"SubGeo" : "sphere",
-		"TexScale" : 
-		[
-			1.0,
-			1.0,
-			1.0
-		],
-		"Transform" : 
-		[
-			5.0,
-			3.5,
-			10.0
+			-0.73740231990814209,
+			0.20000000298023224,
+			9.9701948165893555
 		],
 		"Visible" : true
 	},
 	"shadowDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 26,
+		"ID" : 17,
 		"Layer" : 10,
 		"Mat" : "bricks0",
 		"Name" : "shadowDebugWindow",
@@ -920,7 +648,7 @@
 	"skybox" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 27,
+		"ID" : 18,
 		"Layer" : 9,
 		"Mat" : "sky",
 		"Name" : "skybox",
@@ -951,10 +679,112 @@
 		],
 		"Visible" : true
 	},
+	"sphere1" : 
+	{
+		"Geo" : "shapeGeo",
+		"ID" : 19,
+		"Layer" : 1,
+		"Mat" : "stone0",
+		"Name" : "sphere1",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "sphere",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			-10.0,
+			3.4712362289428711,
+			3.0
+		],
+		"Visible" : true
+	},
+	"sphere2" : 
+	{
+		"Geo" : "shapeGeo",
+		"ID" : 20,
+		"Layer" : 1,
+		"Mat" : "stone0",
+		"Name" : "sphere2",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "sphere",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			10.0,
+			3.4709999561309814,
+			3.0
+		],
+		"Visible" : true
+	},
+	"spot" : 
+	{
+		"Geo" : "spotGeo",
+		"ID" : 21,
+		"Layer" : 0,
+		"Mat" : "icemirror",
+		"Name" : "spot",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "spot",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			7.587836742401123,
+			0.81121253967285156,
+			7.7579936981201172
+		],
+		"Visible" : true
+	},
 	"ssaoDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 28,
+		"ID" : 22,
 		"Layer" : 11,
 		"Mat" : "bricks0",
 		"Name" : "ssaoDebugWindow",
@@ -988,7 +818,7 @@
 	"tree" : 
 	{
 		"Geo" : "treeSpritesGeo",
-		"ID" : 30,
+		"ID" : 23,
 		"Layer" : 4,
 		"Mat" : "treeSprites",
 		"Name" : "tree",
@@ -1013,7 +843,7 @@
 		],
 		"Transform" : 
 		[
-			0.0,
+			5.0,
 			0.0,
 			0.0
 		],

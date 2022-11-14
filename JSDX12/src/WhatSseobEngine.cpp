@@ -9,15 +9,11 @@ static int combobox_material_item_current = 0;
 static int combobox_geo_item_current = 0;
 static int combobox_layer_item_current = 0;
 static int combobox_material_mod_current = 1;
-static const std::vector<std::string> LayerMaps = { "Opaque", "Transparent", "OpaqueDynamicReflectors", "either"};
+static const std::vector<std::string> LayerMaps = { "Opaque", "Transparent", "Toon", "OpaqueDynamicReflectors", "either"}; //Imgui Layers
 
 Engine::Engine(HINSTANCE hInstance)
 	: D3DApp(hInstance)
 {
-	// Estimate the scene bounding sphere manually since we know how the scene was constructed.
-	// The grid is the "widest object" with a width of 20 and depth of 30.0f, and centered at
-	// the world space origin.  In general, you need to loop over every world space vertex
-	// position and compute the bounding sphere.
 	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	mSceneBounds.Radius = sqrtf(50.0f * 50.0f + 75.0f * 75.0f);
 }
@@ -35,9 +31,9 @@ bool Engine::Initialize()
 	if (!D3DApp::Initialize())
 		return false;
 
-	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+	// make members
 	mTextures = std::make_unique<TextureClass>(md3dDevice.Get(), mCommandList.Get());
 
 	mMaterials = std::make_unique<MaterialClass>();
@@ -68,21 +64,23 @@ bool Engine::Initialize()
 	mDynamicCubeMap = std::make_unique<CubeRenderTarget>(md3dDevice.Get(),
 		CubeMapSize, CubeMapSize, DXGI_FORMAT_R8G8B8A8_UNORM);
 	
-
+	//Load Texture, materals
 	mTextures->LoadTextures();
 	mMaterials->BuildMaterials();
 	mGeometries->BuildGeomatries();
+	
+	//Stage on Imgui
 	GetImguiMaterials();
 	GetImguiMaterials2();
 	GetImguiGeos();
 	GetImguiLayers();
 
+	//Build GPU memory & shaders
 	BuildRootSignature();
 	BuildSsaoRootSignature();
 	BuildDescriptorHeaps();
 	//BuildCubeDepthStencil();
 	mShaders->BuildShadersAndInputLayout();
-	//mRenderItems->BuildRenderItems(&mMaterials, &mGeometries);
 	mRenderItems->BuildRenderItemsFromJson( &mMaterials, &mGeometries);
 	BuildFrameResources();
 	BuildPSOs();
@@ -96,7 +94,6 @@ bool Engine::Initialize()
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	// Wait until initialization is complete.
 	FlushCommandQueue();
 
 	return true;
@@ -104,20 +101,18 @@ bool Engine::Initialize()
 
 void Engine::CreateRtvAndDsvDescriptorHeaps()
 {
-	// Add +6 RTV for cube render target.
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
 	rtvHeapDesc.NumDescriptors = SwapChainBufferCount + 3;
-	//rtvHeapDesc.NumDescriptors = SwapChainBufferCount +9;
+	//rtvHeapDesc.NumDescriptors = SwapChainBufferCount +9; //for dynamic cube
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
 		&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
 
-	// Add +1 DSV for cube render target.
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 	dsvHeapDesc.NumDescriptors = 2;
-	//dsvHeapDesc.NumDescriptors = 3;
+	//dsvHeapDesc.NumDescriptors = 3;  //for dynamic cube
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;
@@ -154,12 +149,10 @@ void Engine::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
 
-	// Cycle through the circular frame resource array.
+	// resource frame cycle
 	mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
 	mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
 
-	// Has the GPU finished processing the commands of the current frame resource?
-	// If not, wait until the GPU has completed commands up to this fence point.
 	if (mCurrFrameResource->Fence != 0 && mFence->GetCompletedValue() < mCurrFrameResource->Fence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
@@ -169,7 +162,7 @@ void Engine::Update(const GameTimer& gt)
 	}
 
 	//
-	// Animate the lights (and hence shadows).
+	// Light rotation
 	//
 
 	//mLightRotationAngle += 0.1f * gt.DeltaTime();
@@ -197,12 +190,10 @@ void Engine::Draw(const GameTimer& gt)
 {
 	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
-	// Reuse the memory associated with command recording.
-	// We can only reset when the associated command lists have finished execution on the GPU.
+	// command list 초기화 및 재사용
 	ThrowIfFailed(cmdListAlloc->Reset());
 
-	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
-	// Reusing the command list reuses memory.
+	// pipeline 
 	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get()));
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
@@ -214,17 +205,14 @@ void Engine::Draw(const GameTimer& gt)
 	// Shadow map pass.
 	//
 
-	// Bind all the materials used in this scene.  For structured buffers, we can bypass the heap and 
-	// set as a root descriptor.
+	// Bind material buffer as root descriptor
 	auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
 	mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
 
 	// Bind null SRV for shadow map pass.
 	mCommandList->SetGraphicsRootDescriptorTable(3, mNullSrv);
 
-	// Bind all the textures used in this scene.  Observe
-	// that we only have to specify the first descriptor in the table.  
-	// The root signature knows how many descriptors are expected in the table.
+	// Bind texture buffer as root signature
 	mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
 	DrawSceneToShadowMap();
@@ -246,11 +234,6 @@ void Engine::Draw(const GameTimer& gt)
 	// dynamic cube
 	//
 	/*
-	// Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
-	// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
-	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
-	// index into an array of cube maps.
-
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
@@ -268,12 +251,9 @@ void Engine::Draw(const GameTimer& gt)
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	// Rebind state whenever graphics root signature changes.
-
-	// Bind all the materials used in this scene.  For structured buffers, we can bypass the heap and 
-	// set as a root descriptor.
-	matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
-	mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
+	// Bind material buffer as root descriptor
+	//matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
+	//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
 
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -345,6 +325,9 @@ void Engine::Draw(const GameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTested, mCurrFrameResource);
 
+	mCommandList->SetPipelineState(mPSOs["Toon"].Get());
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
+
 	mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTestedTreeSprites, mCurrFrameResource);
 
@@ -354,6 +337,7 @@ void Engine::Draw(const GameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["highlight"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Highlight, mCurrFrameResource);
 
+	//Imgui Debug window togle
 	if (imguidata.isShowDebug)
 	{
 		mCommandList->SetPipelineState(mPSOs["shadow_debug"].Get());
@@ -372,7 +356,7 @@ void Engine::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-	// Done recording commands.
+	// Close command list
 	ThrowIfFailed(mCommandList->Close());
 
 	// Add the command list to the queue for execution.
@@ -407,7 +391,6 @@ void Engine::OnMouseDown(WPARAM btnState, int x, int y)
 	{
 		if(Editor.GetCurrMode() == EditModes::PICK)
 		mRenderItems->Pick(x, y, mCamera, mClientWidth, mClientHeight, &imguidata);
-		//Pick(x, y);
 	}
 
 	imguidata.pickposition.x = x;
@@ -1111,6 +1094,20 @@ void Engine::BuildPSOs()
 
 
 	//
+	// PSO for Toon Shader
+	//
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC ToonPsoDesc = basePsoDesc;
+	ToonPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("toonPS")->GetBufferPointer()),
+		mShaders->GetShader("toonPS")->GetBufferSize()
+	};
+	ToonPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
+	ToonPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ToonPsoDesc, IID_PPV_ARGS(&mPSOs["Toon"])));
+
+	//
 	// PSO for transparent objects
 	//
 
@@ -1143,6 +1140,7 @@ void Engine::BuildPSOs()
 	};
 	alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
+
 
 	//
 	// PSO for tree sprites
@@ -1500,6 +1498,7 @@ void Engine::DrawSceneToShadowMap()
 	mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
 
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
 
 	// Change back to GENERIC_READ so we can read the texture in a shader.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
@@ -1533,6 +1532,7 @@ void Engine::DrawNormalsAndDepth()
 	mCommandList->SetPipelineState(mPSOs["drawNormals"].Get());
 
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
 
 	// Change back to GENERIC_READ so we can read the texture in a shader.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(normalMap,

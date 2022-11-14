@@ -30,6 +30,7 @@ enum class RenderLayer : int
 {
 	Opaque = 0,
 	Transparent,
+	Toon,
 	OpaqueDynamicReflectors, 
 	AlphaTested,
 	AlphaTestedTreeSprites,
