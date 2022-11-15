@@ -1,8 +1,4 @@
-//***************************************************************************************
-// Default.hlsl by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
-// Defaults for number of lights.
+// Default Light
 #ifndef NUM_DIR_LIGHTS
     #define NUM_DIR_LIGHTS 3
 #endif
@@ -15,7 +11,6 @@
     #define NUM_SPOT_LIGHTS 0
 #endif
 
-// Include common HLSL code.
 #include "Common.hlsl"
 
 struct VertexIn
@@ -41,14 +36,14 @@ VertexOut VS(VertexIn vin)
 {
     VertexOut vout = (VertexOut) 0.0f;
 
-	// Fetch the material data.
+	// material data by index
     MaterialData matData = gMaterialData[gMaterialIndex];
 	
     // Transform to world space.
     float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
     vout.PosW = posW.xyz;
 
-    // Assumes nonuniform scaling; otherwise, need to use inverse-transpose of world matrix.
+    // normal, tangent transform to world space
     vout.NormalW = mul(vin.NormalL, (float3x3) gWorld);
 	
     vout.TangentW = mul(vin.TangentU, (float3x3) gWorld);
@@ -59,18 +54,18 @@ VertexOut VS(VertexIn vin)
     // Generate projective tex-coords to project SSAO map onto scene.
     vout.SsaoPosH = mul(posW, gViewProjTex);
 	
-	// Output vertex attributes for interpolation across triangle.
+	// Texture coordinate
     float4 texC = mul(float4(vin.TexC, 0.0f, 1.0f), gTexTransform);
     vout.TexC = mul(texC, matData.MatTransform).xy;
 
-    // Generate projective tex-coords to project shadow map onto scene.
+    // generate projective shadow map 
     vout.ShadowPosH = mul(posW, gShadowTransform);
     return vout;
 }
 
 float4 PS(VertexOut pin) : SV_Target
 {
-	// Fetch the material data.
+	// fetch material data.
 	MaterialData matData = gMaterialData[gMaterialIndex];
 	float4 diffuseAlbedo = matData.DiffuseAlbedo;
 	float3 fresnelR0 = matData.FresnelR0;
@@ -79,13 +74,12 @@ float4 PS(VertexOut pin) : SV_Target
     uint normalMapIndex = matData.NormalMapIndex;
     
     uint isNormal = matData.hasNormalMap;
-    //uint isNormal = saturate(matData.hasNormalMap);
     float4 normalMapSample = 1.0f;
     float3 bumpedNormalW;// = (1 - isNormal) * pin.NormalW;
     
-	// Interpolating normal can unnormalize it, so renormalize it.
     pin.NormalW = normalize(pin.NormalW);
     float3 normalW = pin.NormalW;
+    //if have bump normal data, calculate normalmap
     if (isNormal)
     {
         normalMapSample = gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC);
@@ -93,7 +87,7 @@ float4 PS(VertexOut pin) : SV_Target
         //normalMapSample = (isNormal) * gTextureMaps[normalMapIndex].Sample(gsamAnisotropicWrap, pin.TexC) + (1 - isNormal) * 1.0f;
         //bumpedNormalW = (isNormal) * NormalSampleToWorldSpace(normalMapSample.rgb, pin.NormalW, pin.TangentW) + (1 - isNormal) * pin.NormalW;
     }
-    else
+    else //bump = normal
     {
         bumpedNormalW =  pin.NormalW;
         
@@ -102,7 +96,7 @@ float4 PS(VertexOut pin) : SV_Target
     }
 
     
-	// Dynamically look up the texture in the array.
+	// dynamic texture array
     diffuseAlbedo *= gTextureMaps[diffuseTexIndex].Sample(gsamAnisotropicWrap, pin.TexC);
 	
 
@@ -116,7 +110,7 @@ float4 PS(VertexOut pin) : SV_Target
     // Light terms.
     float4 ambient = ambientAccess * gAmbientLight * diffuseAlbedo;
     
-    // Only the first light casts a shadow.
+    // shadow calculate
     float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
     shadowFactor[0] = CalcShadowFactor(pin.ShadowPosH);
     

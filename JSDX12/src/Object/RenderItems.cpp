@@ -15,15 +15,12 @@ RenderItemClass::~RenderItemClass()
 
 void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries)
 {
-	//UINT objCBIndex = 0;
 
 	auto skyRitem = std::make_unique<RenderItem>();
 	skyRitem->name = "skybox";
 	skyRitem->wScale = Vector3(5000.0f, 5000.0f, 5000.0f);
 	XMStoreFloat4x4(&skyRitem->World, MakeMatrixWorld(skyRitem->wRot, skyRitem->wScale, skyRitem->wTrans));
 	XMStoreFloat4x4(&skyRitem->TexTransform, MakeMatrixTex(skyRitem->TexScale));
-	//XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(skyRitem->wScale.x, skyRitem->wScale.y, skyRitem->wScale.z));
-	//skyRitem->TexTransform = MathHelper::Identity4x4();
 	skyRitem->ObjCBIndex = objCBIndex++;
 	skyRitem->Mat = materials->get()->GetMaterial("sky");
 	skyRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -41,8 +38,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	quadRitem->name = "shadowDebugWindow";
 	XMStoreFloat4x4(&quadRitem->World, MakeMatrixWorld(quadRitem->wRot, quadRitem->wScale, quadRitem->wTrans));
 	XMStoreFloat4x4(&quadRitem->TexTransform, MakeMatrixTex(quadRitem->TexScale));
-	//quadRitem->World = MathHelper::Identity4x4();
-	//quadRitem->TexTransform = MathHelper::Identity4x4();
 	quadRitem->ObjCBIndex = objCBIndex++;
 	quadRitem->Mat = materials->get()->GetMaterial("bricks0");
 	quadRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -60,8 +55,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	quadRitem2->name = "ssaoDebugWindow";
 	XMStoreFloat4x4(&quadRitem2->World, MakeMatrixWorld(quadRitem2->wRot, quadRitem2->wScale, quadRitem2->wTrans));
 	XMStoreFloat4x4(&quadRitem2->TexTransform, MakeMatrixTex(quadRitem2->TexScale));
-	//quadRitem2->World = MathHelper::Identity4x4();
-	//quadRitem2->TexTransform = MathHelper::Identity4x4();
 	quadRitem2->ObjCBIndex = objCBIndex++;
 	quadRitem2->Mat = materials->get()->GetMaterial("bricks0");
 	quadRitem2->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -81,8 +74,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	boxRitem->wTrans = Vector3(0.0f, 1.2f, 0.0f);
 	XMStoreFloat4x4(&boxRitem->World, MakeMatrixWorld(boxRitem->wRot, boxRitem->wScale, boxRitem->wTrans));
 	XMStoreFloat4x4(&boxRitem->TexTransform, MakeMatrixTex(boxRitem->TexScale));
-	//XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 1.2f, 0.0f));
-	//XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	boxRitem->ObjCBIndex = objCBIndex++;
 	boxRitem->Mat = materials->get()->GetMaterial("mirror0");
 	boxRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
@@ -102,8 +93,6 @@ void RenderItemClass::BuildRenderItems(std::unique_ptr<MaterialClass>* materials
 	gridRitem->TexScale = Vector3(8.0f, 8.0f, 1.0f);
 	XMStoreFloat4x4(&gridRitem->World, MakeMatrixWorld(gridRitem->wRot, gridRitem->wScale, gridRitem->wTrans));
 	XMStoreFloat4x4(&gridRitem->TexTransform, MakeMatrixTex(gridRitem->TexScale));
-	//XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(20.0f, 0.1f, 30.0f));
-	//XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
 	gridRitem->ObjCBIndex = objCBIndex++;
 	gridRitem->Mat = materials->get()->GetMaterial("tile0");
 	gridRitem->Geo = geometries->get()->GetGeometry("shapeGeo");
