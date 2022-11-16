@@ -15,7 +15,6 @@ public:
 	~RenderItemClass();
 
 
-	void BuildRenderItems(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
 	void BuildRenderItemsFromJson(std::unique_ptr<MaterialClass>* materials, std::unique_ptr<GeoMetryClass>* geometries);
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, int layer, FrameResource* curFrames);
 

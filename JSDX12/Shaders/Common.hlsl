@@ -1,5 +1,6 @@
 //***************************************************************************************
-// Common.hlsl by Frank Luna (C) 2015 All Rights Reserved.
+// Common.hlsl
+// Common infomations
 //***************************************************************************************
 
 // Defaults for number of lights.
@@ -29,21 +30,19 @@ struct MaterialData
     uint     hasNormalMap;
 	uint     MatPad2;
 };
-
+// Skybox, Shadow Map, Ssao Map
 TextureCube gCubeMap : register(t0);
 Texture2D gShadowMap : register(t1);
 Texture2D gSsaoMap : register(t2);
 
 
-// An array of textures, which is only supported in shader model 5.1+.  Unlike Texture2DArray, the textures
-// in this array can be different sizes and formats, making it more flexible than texture arrays.
+// Diffuse textures
 Texture2D gTextureMaps[32] : register(t3);
 
-// Put in space1, so the texture array does not overlap with these resources.  
-// The texture array will occupy registers t0, t1, ..., t3 in space0. 
+// Material datas gpu memory
 StructuredBuffer<MaterialData> gMaterialData : register(t0, space1);
 
-
+//Sampler states
 SamplerState gsamPointWrap : register(s0);
 SamplerState gsamPointClamp : register(s1);
 SamplerState gsamLinearWrap : register(s2);
@@ -88,10 +87,6 @@ cbuffer cbPass : register(b1)
     float gFogStart;
     float gFogRange;
     float2 cbPerObjectPad2;
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
     Light gLights[MaxLights];
 };
 
@@ -122,7 +117,6 @@ float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, floa
 //---------------------------------------------------------------------------------------
 // PCF for shadow mapping.
 //---------------------------------------------------------------------------------------
-
 float CalcShadowFactor(float4 shadowPosH)
 {
     // Complete projection by doing division by w.

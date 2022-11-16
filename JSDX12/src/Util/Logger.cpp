@@ -10,6 +10,7 @@ Logger::Logger(int level)
 }
 string Logger::getTimestamp()
 {
+    //³¯Â¥, ½Ã°£ °Ù
     string result;
     time_t currentSec = time(NULL);
     tm* t = localtime(&currentSec);
@@ -37,6 +38,7 @@ string Logger::getTimestamp()
     result = result + oss.str();
     return result;
 }
+
 void Logger::writeLog(const char* funcName, int line, int lv, const char* str, ...)
 {
     FILE* fp = NULL;

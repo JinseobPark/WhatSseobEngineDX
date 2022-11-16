@@ -1,19 +1,6 @@
 //***************************************************************************************
-// DrawNormals.hlsl by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
-// Defaults for number of lights.
-#ifndef NUM_DIR_LIGHTS
-    #define NUM_DIR_LIGHTS 0
-#endif
-
-#ifndef NUM_POINT_LIGHTS
-    #define NUM_POINT_LIGHTS 0
-#endif
-
-#ifndef NUM_SPOT_LIGHTS
-    #define NUM_SPOT_LIGHTS 0
-#endif
+// DrawNormals.hlsl 
+//***************************************
 
 // Include common HLSL code.
 #include "Common.hlsl"
@@ -77,7 +64,6 @@ float4 PS(VertexOut pin) : SV_Target
 	// Interpolating normal can unnormalize it, so renormalize it.
     pin.NormalW = normalize(pin.NormalW);
 	
-    // NOTE: We use interpolated vertex normal for SSAO.
 
     // Write normal in view space coordinates
     float3 normalV = mul(pin.NormalW, (float3x3)gView);

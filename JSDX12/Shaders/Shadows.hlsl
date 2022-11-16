@@ -1,5 +1,5 @@
 //***************************************************************************************
-// Shadows.hlsl by Frank Luna (C) 2015 All Rights Reserved.
+// Shadows.hlsl
 //***************************************************************************************
 
 // Include common HLSL code.
@@ -36,9 +36,6 @@ VertexOut VS(VertexIn vin)
     return vout;
 }
 
-// This is only used for alpha cut out geometry, so that shadows 
-// show up correctly.  Geometry that does not need to sample a
-// texture can use a NULL pixel shader for depth pass.
 void PS(VertexOut pin) 
 {
 	// Fetch the material data.

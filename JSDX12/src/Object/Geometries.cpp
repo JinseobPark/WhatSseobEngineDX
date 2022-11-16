@@ -59,6 +59,7 @@ SubmeshGeometry GeoMetryClass::GetSubMesh(std::string str)
 			return submesh->second;
 		}
 	}
+    //can not find return box
 	return geometryMap["shapeGeo"].get()->DrawArgs["box"];
 }
 
@@ -79,6 +80,7 @@ std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> GeoMetryClass::Ge
 	return geometryMap;
 }
 
+// Frank Luna Function
 void GeoMetryClass::BuildShapeGeometry()
 {
 	GeometryGenerator geoGen;
@@ -368,116 +370,6 @@ void GeoMetryClass::BuildTreeSpritesGeometry()
 	geometryMap["treeSpritesGeo"] = std::move(geo);
 }
 
-void GeoMetryClass::BuildCarGeometry()
-{
-	std::ifstream fin("Models/skull.txt");
-
-	if (!fin)
-	{
-		MessageBox(0, L"Models/skull.txt not found.", 0, 0);
-		return;
-	}
-
-	UINT vcount = 0;
-	UINT tcount = 0;
-	std::string ignore;
-
-	fin >> ignore >> vcount;
-	fin >> ignore >> tcount;
-	fin >> ignore >> ignore >> ignore >> ignore;
-
-	XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);
-	XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);
-
-	XMVECTOR vMin = XMLoadFloat3(&vMinf3);
-	XMVECTOR vMax = XMLoadFloat3(&vMaxf3);
-
-	std::vector<Vertex> vertices(vcount);
-	for (UINT i = 0; i < vcount; ++i)
-	{
-		fin >> vertices[i].Pos.x >> vertices[i].Pos.y >> vertices[i].Pos.z;
-		fin >> vertices[i].Normal.x >> vertices[i].Normal.y >> vertices[i].Normal.z;
-
-		vertices[i].TangentU = XMFLOAT3(0, 0, 0);
-		XMVECTOR P = XMLoadFloat3(&vertices[i].Pos);
-
-		// Project point onto unit sphere and generate spherical texture coordinates.
-		XMFLOAT3 spherePos;
-		XMStoreFloat3(&spherePos, XMVector3Normalize(P));
-
-		float theta = atan2f(spherePos.z, spherePos.x);
-
-		// Put in [0, 2pi].
-		if (theta < 0.0f)
-			theta += XM_2PI;
-
-		float phi = acosf(spherePos.y);
-
-		float u = theta / (2.0f * XM_PI);
-		float v = phi / XM_PI;
-
-		vertices[i].TexC = { u, v };
-
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-
-	BoundingBox bounds;
-	XMStoreFloat3(&bounds.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&bounds.Extents, 0.5f * (vMax - vMin));
-
-	fin >> ignore;
-	fin >> ignore;
-	fin >> ignore;
-
-	std::vector<std::int32_t> indices(3 * tcount);
-	for (UINT i = 0; i < tcount; ++i)
-	{
-		fin >> indices[i * 3 + 0] >> indices[i * 3 + 1] >> indices[i * 3 + 2];
-	}
-
-	fin.close();
-
-	//
-	// Pack the indices of all the meshes into one index buffer.
-	//
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "carGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
-		mCommandList, vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
-		mCommandList, indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R32_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-	submesh.Bounds = bounds;
-
-	geo->DrawArgs["car"] = submesh;
-	mSubmeshGeoList.push_back(std::make_pair("car", "carGeo"));
-
-	geometryMap[geo->Name] = std::move(geo);
-}
-
 void GeoMetryClass::BuildModelGeometryOri(std::string filename, std::string modelname)
 {
 
@@ -680,16 +572,6 @@ void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelna
                     }
                     break;
 
-                // Not use 'g'
-                //    //New group (Subset)
-                //case 'g':    //g - defines a group
-                //    checkChar = fileIn.get();
-                //    if (checkChar == ' ')
-                //    {
-                //        subsetIndexStart.push_back(vIndex);        //Start index for this subset
-                //        subsetCount++;
-                //    }
-                //    break;
 
                     //Get Face Index
                 case 'f':    //f - defines the faces
@@ -781,12 +663,6 @@ void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelna
                                     }
                                 }
 
-                                //Check to make sure there is at least one subset
-                                //if (subsetCount == 0)
-                                //{
-                                //    subsetIndexStart.push_back(vIndex);        //Start index for this subset
-                                //    subsetCount++;
-                                //}
 
                                 //Avoid duplicate vertices
                                 bool vertAlreadyExists = false;
@@ -942,67 +818,6 @@ void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelna
                     }
                     break;
 
-                //case 'm':    //mtllib - material library filename
-                //    checkChar = fileIn.get();
-                //    if (checkChar == 't')
-                //    {
-                //        checkChar = fileIn.get();
-                //        if (checkChar == 'l')
-                //        {
-                //            checkChar = fileIn.get();
-                //            if (checkChar == 'l')
-                //            {
-                //                checkChar = fileIn.get();
-                //                if (checkChar == 'i')
-                //                {
-                //                    checkChar = fileIn.get();
-                //                    if (checkChar == 'b')
-                //                    {
-                //                        checkChar = fileIn.get();
-                //                        if (checkChar == ' ')
-                //                        {
-                //                            //Store the material libraries file name
-                //                            //fileIn >> meshMatLib;
-                //                        }
-                //                    }
-                //                }
-                //            }
-                //        }
-                //    }
-
-                //    break;
-
-                //case 'u':    //usemtl - which material to use
-                //    checkChar = fileIn.get();
-                //    if (checkChar == 's')
-                //    {
-                //        checkChar = fileIn.get();
-                //        if (checkChar == 'e')
-                //        {
-                //            checkChar = fileIn.get();
-                //            if (checkChar == 'm')
-                //            {
-                //                checkChar = fileIn.get();
-                //                if (checkChar == 't')
-                //                {
-                //                    checkChar = fileIn.get();
-                //                    if (checkChar == 'l')
-                //                    {
-                //                        checkChar = fileIn.get();
-                //                        if (checkChar == ' ')
-                //                        {
-                //                            meshMaterialsTemp = L"";    //Make sure this is cleared
-
-                //                            fileIn >> meshMaterialsTemp; //Get next type (string)
-
-                //                            meshMaterials.push_back(meshMaterialsTemp);
-                //                        }
-                //                    }
-                //                }
-                //            }
-                //        }
-                //    }
-                //    break;
 
                 default:
                     break;
@@ -1016,15 +831,6 @@ void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelna
             return;
         }
 
-        //subsetIndexStart.push_back(vIndex); //There won't be another index start after our last subset, so set it here
-
-        ////sometimes "g" is defined at the very top of the file, then again before the first group of faces.
-        ////This makes sure the first subset does not conatain "0" indices.
-        //if (subsetIndexStart[1] == 0)
-        //{
-        //    subsetIndexStart.erase(subsetIndexStart.begin() + 1);
-        //    meshSubsets--;
-        //}
 
         //Make sure we have a default for the tex coord and normal
         //if one or both are not specified
@@ -1131,43 +937,6 @@ void GeoMetryClass::BuildModelGeometry(std::string filename, std::string modelna
             }
         }
 
-        //Buffer
-        ////Create index buffer
-        //D3D11_BUFFER_DESC indexBufferDesc;
-        //ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
-        //indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        //indexBufferDesc.ByteWidth = sizeof(DWORD) * meshTriangles * 3;
-        //indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        //indexBufferDesc.CPUAccessFlags = 0;
-        //indexBufferDesc.MiscFlags = 0;
-
-        //D3D11_SUBRESOURCE_DATA iinitData;
-
-        //iinitData.pSysMem = &indices[0];
-        //d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, indexBuff);
-
-        ////Create Vertex Buffer
-        //D3D11_BUFFER_DESC vertexBufferDesc;
-        //ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-        //vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        //vertexBufferDesc.ByteWidth = sizeof(Vertex) * totalVerts;
-        //vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        //vertexBufferDesc.CPUAccessFlags = 0;
-        //vertexBufferDesc.MiscFlags = 0;
-
-        //D3D11_SUBRESOURCE_DATA vertexBufferData;
-
-        //ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-        //vertexBufferData.pSysMem = &vertices[0];
-        //hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, vertBuff);
-
-
-        
-        // vertices, indices
-        // my
-        //
 
         //
         // Pack the indices of all the meshes into one index buffer.

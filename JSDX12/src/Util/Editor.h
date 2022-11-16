@@ -41,4 +41,3 @@ bool material_getter2(void* data, int index, const char** output);
 bool geo_getter(void* data, int index, const char** output);
 bool layer_getter(void* data, int index, const char** output);
 
-//std::vector<std::string> LayerMap = { "Opaque", "Transparent", "AlphaTested",  "AlphaTestedTreeSprites",  "Mirrors",  "Shadow",  "Highlight",  "Sky", "OpaqueDynamicReflectors",  "ShadowDebug",  "SsaoDebug",  "Count" };

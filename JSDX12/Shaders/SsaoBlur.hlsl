@@ -1,12 +1,5 @@
 //=============================================================================
-// SsaoBlur.hlsl by Frank Luna (C) 2015 All Rights Reserved.
-//
-// Performs a bilateral edge preserving blur of the ambient map.  We use 
-// a pixel shader instead of compute shader to avoid the switch from 
-// compute mode to rendering mode.  The texture cache makes up for some of the
-// loss of not having shared memory.  The ambient map uses 16-bit texture
-// format, which is small, so we should be able to fit a lot of texels
-// in the cache.
+// SsaoBlur.hlsl 
 //=============================================================================
 
 cbuffer cbSsao : register(b0)
