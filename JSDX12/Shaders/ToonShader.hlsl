@@ -24,6 +24,7 @@ struct VertexOut
 	float2 TexC    : TEXCOORD;
 };
 
+
 VertexOut VS(VertexIn vin)
 {
     VertexOut vout = (VertexOut) 0.0f;
@@ -114,6 +115,7 @@ float4 PS(VertexOut pin) : SV_Target
     float3 r = reflect(-toEyeW, bumpedNormalW);
     float4 reflectionColor = gCubeMap.Sample(gsamLinearWrap, r);
     float3 fresnelFactor = SchlickFresnel(fresnelR0, bumpedNormalW, r);
+    //litColor.rgb += fresnelFactor.rgb;
     litColor.rgb += shininess * fresnelFactor * reflectionColor.rgb;
     litColor.rgb = ceil(litColor.rgb * 5) / 5.0f; //Tooning
     

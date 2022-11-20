@@ -23,7 +23,7 @@ Engine::~Engine()
 {
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
-	ImguiShutdown();
+	//ImguiShutdown();
 }
 
 bool Engine::Initialize()
@@ -325,6 +325,8 @@ void Engine::Draw(const GameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTested, mCurrFrameResource);
 
+	mCommandList->SetPipelineState(mPSOs["toonout"].Get());
+	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
 	mCommandList->SetPipelineState(mPSOs["Toon"].Get());
 	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
 
@@ -1060,6 +1062,7 @@ void Engine::BuildPSOs()
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC basePsoDesc;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultLayout = mShaders->GetInputLayout();
+	std::vector<D3D12_INPUT_ELEMENT_DESC> OutlineLayout = mShaders->GetOutlineInputLayout();
 	std::vector<D3D12_INPUT_ELEMENT_DESC> treeLayout = mShaders->GetTreeSpriteInputLayout();
 
 	ZeroMemory(&basePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -1105,7 +1108,30 @@ void Engine::BuildPSOs()
 	};
 	ToonPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
 	ToonPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	ToonPsoDesc.RasterizerState.FrontCounterClockwise = false;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ToonPsoDesc, IID_PPV_ARGS(&mPSOs["Toon"])));
+
+	//
+	// PSO for ToonOutline Shader
+	//
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC ToonOutPsoDesc = basePsoDesc;
+	ToonOutPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("toonOutVS")->GetBufferPointer()),
+		mShaders->GetShader("toonOutVS")->GetBufferSize()
+	};
+	ToonOutPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("toonOutPS")->GetBufferPointer()),
+		mShaders->GetShader("toonOutPS")->GetBufferSize()
+	};
+	//ToonOutPsoDesc.InputLayout = { OutlineLayout.data(), (UINT)OutlineLayout.size() };
+	ToonOutPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	ToonOutPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	ToonOutPsoDesc.RasterizerState.FrontCounterClockwise = true;
+	ToonOutPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ToonOutPsoDesc, IID_PPV_ARGS(&mPSOs["toonout"])));
 
 	//
 	// PSO for transparent objects
