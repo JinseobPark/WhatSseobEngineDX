@@ -258,6 +258,18 @@ void RenderItemClass::DeleteRenderItem(ImguiData* data)
 	}
 }
 
+unsigned int RenderItemClass::GetItemLayerSize(int layer)
+{
+	if (layer < (int)RenderLayer::Count)
+		return mRitemLayer[layer].size();
+	else return 0;
+}
+
+bool RenderItemClass::isEmptyLayer(int layer)
+{
+	return (mRitemLayer[layer].size() == 0);
+}
+
 RenderItem* RenderItemClass::GetPickedItem()
 {
 	if (mPickedRitem != nullptr)

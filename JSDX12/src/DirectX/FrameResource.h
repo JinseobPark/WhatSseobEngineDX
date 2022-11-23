@@ -30,6 +30,8 @@ struct PassConstants
     DirectX::XMFLOAT4X4 ShadowTransform = MathHelper::Identity4x4();
     DirectX::XMFLOAT3 EyePosW = { 0.0f, 0.0f, 0.0f };
     float cbPerObjectPad1 = 0.0f;
+    DirectX::XMFLOAT3 CameraRight = { 1.0f, 0.0f, 0.0f };
+    float cbPerObjectPad3 = 0.0f;
     DirectX::XMFLOAT2 RenderTargetSize = { 0.0f, 0.0f };
     DirectX::XMFLOAT2 InvRenderTargetSize = { 0.0f, 0.0f };
     float NearZ = 0.0f;
@@ -70,6 +72,19 @@ struct SsaoConstants
     float SurfaceEpsilon = 0.05f;
 };
 
+struct ParticleConstants
+{
+    DirectX::XMFLOAT4 startColor;
+    DirectX::XMFLOAT4 endColor;
+    DirectX::XMFLOAT3 velocity;
+    float LifeTime = 0.0f;
+    DirectX::XMFLOAT3 acceleration;
+    float pad;
+    int EmitCount = 0;
+    int MaxParticles = 0;
+    int GridSize = 0;
+};
+
 struct MaterialData
 {
     DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -99,7 +114,7 @@ struct FrameResource
 {
 public:
 
-    FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, UINT materialCount);
+    FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, UINT materialCount, UINT particleCount);
     FrameResource(const FrameResource& rhs) = delete;
     FrameResource& operator=(const FrameResource& rhs) = delete;
     ~FrameResource();
@@ -116,6 +131,7 @@ public:
     std::unique_ptr<UploadBuffer<MaterialData>> MaterialBuffer = nullptr;
 
     std::unique_ptr<UploadBuffer<ObjectConstants>> ObjectCB = nullptr;
+    std::unique_ptr<UploadBuffer<ParticleConstants>> ParticleCB = nullptr;
     // Fence value to mark commands up to this fence point.  This lets us
     // check if these frame resources are still in use by the GPU.
     UINT64 Fence = 0;

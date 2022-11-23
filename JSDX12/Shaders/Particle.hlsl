@@ -1,5 +1,5 @@
 //***************************************************************************************
-//  TreeSprite.hlsl
+//  Particle.hlsl
 //***************************************************************************************
 
 #include "Common.hlsl"
@@ -7,6 +7,8 @@
 struct VertexIn
 {
     float3 PosW : POSITION;
+    float3 VelW : VELOCITY;
+    float3 AccW : ACCELERATION;
     float2 SizeW : SIZE;
 };
 
@@ -31,7 +33,11 @@ VertexOut VS(VertexIn vin)
     
 	// Fetch the material data.
     MaterialData matData = gMaterialData[gMaterialIndex];
-    vout.CenterW = vin.PosW;
+  //  vout.CenterW = vin.PosW;
+    float3 posW = vin.PosW + vin.VelW * gTotalTime;
+    posW.y = max(posW.y, 0.1f);
+    vout.CenterW = mul(float4(posW, 1.0f), gWorld).xyz;
+    
     vout.SizeW = vin.SizeW;
 
     return vout;
@@ -46,9 +52,11 @@ void GS(point VertexOut gin[1],
 {
     float3 up = float3(0.0f, 1.0f, 0.0f);
     float3 look = gEyePosW - gin[0].CenterW;
-    look.y = 0.0f; // y-axis aligned, so project to xz-plane
+    //look.y = 0.0f; // y-axis aligned, so project to xz-plane
     look = normalize(look);
-    float3 right = cross(up, look);
+    float3 right = normalize(gCameraRight);
+    float3 up2 = cross(right, look);
+    up2 = normalize(up2);
 
 	//
 	// Compute triangle strip vertices (quad) in world space.
@@ -57,10 +65,10 @@ void GS(point VertexOut gin[1],
     float halfHeight = 0.5f * gin[0].SizeW.y;
 	
     float4 v[4];
-    v[0] = float4(gin[0].CenterW + halfWidth * right - halfHeight * up, 1.0f);
-    v[1] = float4(gin[0].CenterW + halfWidth * right + halfHeight * up, 1.0f);
-    v[2] = float4(gin[0].CenterW - halfWidth * right - halfHeight * up, 1.0f);
-    v[3] = float4(gin[0].CenterW - halfWidth * right + halfHeight * up, 1.0f);
+    v[0] = float4(gin[0].CenterW + halfWidth * right - halfHeight * up2, 1.0f);
+    v[1] = float4(gin[0].CenterW + halfWidth * right + halfHeight * up2, 1.0f);
+    v[2] = float4(gin[0].CenterW - halfWidth * right - halfHeight * up2, 1.0f);
+    v[3] = float4(gin[0].CenterW - halfWidth * right + halfHeight * up2, 1.0f);
 
 	//
 	// Transform quad vertices to world space and output 
@@ -98,7 +106,7 @@ float4 PS(GeoOut pin) : SV_Target
     float roughness = matData.Roughness;
     uint diffuseTexIndex = matData.DiffuseMapIndex;
     float3 uvw = float3(pin.TexC, pin.PrimID % 3);
-    diffuseAlbedo *= gTextureMaps[23].Sample(gsamAnisotropicWrap, uvw.xy);
+    diffuseAlbedo *= gTextureMaps[22].Sample(gsamAnisotropicWrap, uvw.xy);
 	
 #ifdef ALPHA_TEST
 	// Discard pixel if texture alpha < 0.1.  We do this test as soon 

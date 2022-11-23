@@ -35,10 +35,12 @@ void TextureClass::LoadTextures()
 		"wood",						//17
 		"woodN",							//18
 		"Polygon",					//19
-		"grass1",					//19
-		"grass1N",					//19
-		"octostone",					//19
-		"octostoneN",					//20
+		"grass1",					//20
+		"grass1N",					//21
+		"octostone",					//22
+		"octostoneN",					//23
+		"star",                               //24
+		"circle",                               //25
 	};
 
 	std::vector<std::wstring> texFilenames =
@@ -67,6 +69,8 @@ void TextureClass::LoadTextures()
 		L"Textures/grass1_nor.dds",//21
 		L"Textures/octostone_di.dds",//22
 		L"Textures/octostone_nor.dds",//23
+		L"Textures/star.dds",//24
+		L"Textures/circle.dds",//25
 
 	};
 

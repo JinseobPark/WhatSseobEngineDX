@@ -75,6 +75,8 @@ cbuffer cbPass : register(b1)
     float4x4 gShadowTransform;
     float3 gEyePosW;
     float cbPerObjectPad1;
+    float3 gCameraRight;
+    float cbPerObjectPad3;
     float2 gRenderTargetSize;
     float2 gInvRenderTargetSize;
     float gNearZ;

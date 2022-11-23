@@ -20,6 +20,7 @@ public :
 	std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout();
 	std::vector<D3D12_INPUT_ELEMENT_DESC> GetOutlineInputLayout();
 	std::vector<D3D12_INPUT_ELEMENT_DESC> GetTreeSpriteInputLayout();
+	std::vector<D3D12_INPUT_ELEMENT_DESC> GetParticleInputLayout();
 
 private:
 	std::unordered_map<std::string, ComPtr<ID3DBlob>> shaderMap;
@@ -27,5 +28,6 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mOutlineInputLayout;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mTreeSpriteInputLayout;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> mParticleInputLayout;
 
 };

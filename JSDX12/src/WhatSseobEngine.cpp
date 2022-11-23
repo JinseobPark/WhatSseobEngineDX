@@ -23,7 +23,9 @@ Engine::~Engine()
 {
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
-	//ImguiShutdown();
+	if (emitter)
+		delete emitter;
+	ImguiShutdown();
 }
 
 bool Engine::Initialize()
@@ -32,6 +34,7 @@ bool Engine::Initialize()
 		return false;
 
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	// make members
 	mTextures = std::make_unique<TextureClass>(md3dDevice.Get(), mCommandList.Get());
@@ -53,7 +56,30 @@ bool Engine::Initialize()
 		mClientWidth, mClientHeight);
 
 	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
+	if (isPostprocess)
+	{
+		mSobelFilter = std::make_unique<Filter>(
+			md3dDevice.Get(),
+			mClientWidth, mClientHeight,
+			mBackBufferFormat);
 
+		mOffscreenRT = std::make_unique<RenderTarget>(
+			md3dDevice.Get(),
+			mClientWidth, mClientHeight,
+			mBackBufferFormat);
+	}
+
+	if(isParticleCompute)
+	emitter = new Emitter(
+		100000,
+		100,
+		100000.0f, // Particles per second
+		1000.0f, // Particle lifetime
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f),
+		XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f)
+	);
 	//
 	// Dynamic cube
 	// 
@@ -68,6 +94,8 @@ bool Engine::Initialize()
 	mTextures->LoadTextures();
 	mMaterials->BuildMaterials();
 	mGeometries->BuildGeomatries();
+	mGeometries->BuildParticle(ParticleCount); // particle count
+	
 	
 	//Stage on Imgui
 	GetImguiMaterials();
@@ -78,6 +106,13 @@ bool Engine::Initialize()
 	//Build GPU memory & shaders
 	BuildRootSignature();
 	BuildSsaoRootSignature();
+	if(isPostprocess)
+	BuildPostProcessRootSignature(); // postprocess
+	if (isParticleCompute)
+	{
+		BuildComputeBuffers();
+		BuildParticleRootSignature();
+	}
 	BuildDescriptorHeaps();
 	//BuildCubeDepthStencil();
 	mShaders->BuildShadersAndInputLayout();
@@ -95,6 +130,7 @@ bool Engine::Initialize()
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	FlushCommandQueue();
+
 
 	return true;
 }
@@ -148,7 +184,6 @@ void Engine::OnResize()
 void Engine::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
-
 	// resource frame cycle
 	mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
 	mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
@@ -183,200 +218,358 @@ void Engine::Update(const GameTimer& gt)
 	UpdateShadowPassCB(gt);
 	UpdateSsaoCB(gt);
 	//UpdateReflectedPassCB(gt);
-	ImguiUpdate(gt);
+	if (isParticleCompute)
+	{
+		emitter->Update(gt.TotalTime(), gt.TotalTime());
+		UpdateParticlePassCB(gt);
+	}
+	else
+	{
+		ImguiUpdate(gt);
+
+	}
 }
 
 void Engine::Draw(const GameTimer& gt)
 {
-	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
-	// command list 초기화 및 재사용
-	ThrowIfFailed(cmdListAlloc->Reset());
-
-	// pipeline 
-	ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get()));
-
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
-	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-
-	//
-	// Shadow map pass.
-	//
-
-	// Bind material buffer as root descriptor
-	auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
-	mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
-
-	// Bind null SRV for shadow map pass.
-	mCommandList->SetGraphicsRootDescriptorTable(3, mNullSrv);
-
-	// Bind texture buffer as root signature
-	mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-	DrawSceneToShadowMap();
-
-	//
-	// Normal/depth pass.
-	//
-
-	DrawNormalsAndDepth();
-
-	//
-	// Compute SSAO.
-	// 
-
-	mCommandList->SetGraphicsRootSignature(mSsaoRootSignature.Get());
-	mSsao->ComputeSsao(mCommandList.Get(), mCurrFrameResource, 3);
-
-	//
-	// dynamic cube
-	//
-	/*
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
-	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
-
-	mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-	DrawSceneToCubeMap();
-	*/
-
-
-	//
-	// Main rendering pass.
-	//
-
-	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-
-	// Bind material buffer as root descriptor
-	//matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
-	//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
-
-	mCommandList->RSSetViewports(1, &mScreenViewport);
-	mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
-	//mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-	// Specify the buffers we are going to render to.
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-	// Bind all the textures used in this scene.  Observe
-	// that we only have to specify the first descriptor in the table.  
-	// The root signature knows how many descriptors are expected in the table.
-	mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-	auto passCB = mCurrFrameResource->PassCB->Resource();
-	mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
-
-	// Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
-	// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
-	// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
-	// index into an array of cube maps.
-
-	CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
-	mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
-
-	//
-	// dynamic cube
-	// 
-	/*
-	// Use the dynamic cube map for the dynamic reflectors layer.
-	CD3DX12_GPU_DESCRIPTOR_HANDLE dynamicTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	dynamicTexDescriptor.Offset(mSkyTexHeapIndex + 2, mCbvSrvUavDescriptorSize);
-	mCommandList->SetGraphicsRootDescriptorTable(3, dynamicTexDescriptor);
-
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors]);
-	*/
-
-	mCommandList->SetPipelineState(mPSOs["opaque"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
-
-	//
-	//stencil buffer
-	// 
-	/*
-	// Mark the visible mirror pixels in the stencil buffer with the value 1
-	mCommandList->OMSetStencilRef(1);
-	mCommandList->SetPipelineState(mPSOs["markStencilMirrors"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Mirrors]);
-
-	// Draw the reflection into the mirror only (only for pixels where the stencil buffer is 1).
-	// Note that we must supply a different per-pass constant buffer--one with the lights reflected.
-	mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress() + 1 * passCBByteSize);
-	mCommandList->SetPipelineState(mPSOs["drawStencilReflections"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Reflected]);
-
-	// Restore main pass constants and stencil ref.
-	mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
-	mCommandList->OMSetStencilRef(0);
-	*/
-
-
-	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTested, mCurrFrameResource);
-
-	mCommandList->SetPipelineState(mPSOs["toonout"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
-	mCommandList->SetPipelineState(mPSOs["Toon"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
-
-	mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTestedTreeSprites, mCurrFrameResource);
-
-	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Transparent, mCurrFrameResource);
-
-	mCommandList->SetPipelineState(mPSOs["highlight"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Highlight, mCurrFrameResource);
-
-	//Imgui Debug window togle
-	if (imguidata.isShowDebug)
+	if (isParticleCompute)
 	{
-		mCommandList->SetPipelineState(mPSOs["shadow_debug"].Get());
-		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::ShadowDebug, mCurrFrameResource);
+		auto currentmCommandListAllocator = mCurrFrameResource->CmdListAlloc;
 
-		mCommandList->SetPipelineState(mPSOs["ssao_debug"].Get());
-		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::SsaoDebug, mCurrFrameResource);
+		// reuse the memory associated with command recording
+		// we can only reset when the associated command lists have finished execution on the GPU
+		ThrowIfFailed(currentmCommandListAllocator->Reset());
+
+		ThrowIfFailed(mCommandList->Reset(currentmCommandListAllocator.Get(), mPSOs["particleOpaque"].Get()));
+
+		mCommandList->SetPipelineState(mPSOs["particleEmit"].Get());
+		mCommandList->SetComputeRootSignature(particleRootSignature.Get());
+
+		ID3D12DescriptorHeap* descriptorHeaps[] = { pUAVHeap.Get() };
+		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+		auto objectCB = mCurrFrameResource->ObjectCB->Resource();
+		mCommandList->SetComputeRootConstantBufferView(0, objectCB->GetGPUVirtualAddress());
+
+		auto timeCB = mCurrFrameResource->PassCB->Resource();
+		mCommandList->SetComputeRootConstantBufferView(1, timeCB->GetGPUVirtualAddress());
+
+		auto particleCB = mCurrFrameResource->ParticleCB->Resource();
+		mCommandList->SetComputeRootConstantBufferView(2, particleCB->GetGPUVirtualAddress());
+
+		mCommandList->SetComputeRootDescriptorTable(3, ParticlePoolGPUUAV);
+		mCommandList->SetComputeRootDescriptorTable(4, ACDeadListGPUUAV);
+		mCommandList->SetComputeRootDescriptorTable(5, DrawListGPUUAV);
+		mCommandList->SetComputeRootDescriptorTable(6, DrawArgsGPUUAV);
+
+		while (emitter->GetEmitTimeCounter() >= emitter->GetTimeBetweenEmit())
+		{
+			emitter->SetEmitCount((int)(emitter->GetEmitTimeCounter() / emitter->GetTimeBetweenEmit()));
+
+			emitter->SetEmitCount(min(emitter->GetEmitCount(), 65535));
+			emitter->SetEmitTimeCounter(fmod(emitter->GetEmitTimeCounter(), emitter->GetTimeBetweenEmit()));
+
+			mCommandList->Dispatch(emitter->GetEmitCount(), 1, 1);
+		}
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RWDrawList.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+
+		mCommandList->CopyResource(RWDrawList.Get(), DrawListUploadBuffer.Get());
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RWDrawList.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+		mCommandList->SetPipelineState(mPSOs["particleUpdate"].Get());
+		mCommandList->SetComputeRootSignature(particleRootSignature.Get());
+		mCommandList->Dispatch(emitter->GetMaxParticles(), 1, 1);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(RWDrawList.Get()));
+
+		mCommandList->SetPipelineState(mPSOs["particleDraw"].Get());
+		mCommandList->SetComputeRootSignature(particleRootSignature.Get());
+		mCommandList->Dispatch(1, 1, 1);
+
+		mCommandList->RSSetViewports(1, &mScreenViewport);
+		mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+
+		// indicate a state transition on the resource usage
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		// clear the back buffer and depth buffer
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		// specify the buffers we are going to render to
+		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+		mCommandList->SetPipelineState(mPSOs["particleOpaque"].Get());
+
+		mCommandList->SetGraphicsRootSignature(particleDrawSignature.Get());
+
+		mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		mCommandList->SetGraphicsRootConstantBufferView(0, objectCB->GetGPUVirtualAddress());
+		mCommandList->SetGraphicsRootConstantBufferView(1, timeCB->GetGPUVirtualAddress());
+		mCommandList->SetGraphicsRootConstantBufferView(2, particleCB->GetGPUVirtualAddress());
+
+		mCommandList->SetGraphicsRootDescriptorTable(3, ParticlePoolGPUSRV);
+		mCommandList->SetGraphicsRootDescriptorTable(4, DrawListGPUSRV);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RWDrawArgs.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT));
+
+		mCommandList->ExecuteIndirect(
+			particleCommandSignature.Get(),
+			1,
+			RWDrawArgs.Get(),
+			0,
+			nullptr,
+			0);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RWDrawArgs.Get(),
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+		// indicate a state transition on the resource usage
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+		// done recording commands
+		ThrowIfFailed(mCommandList->Close());
+
+		// add the command list to the queue for execution
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+		// wwap the back and front buffers
+		ThrowIfFailed(mSwapChain->Present(1, 0));
+		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+		// advance the fence value to mark commands up to this fence point
+		mCurrFrameResource->Fence = ++mCurrentFence;
+
+		// add an instruction to the command queue to set a new fence point.
+		// because we are on the GPU timeline, the new fence point won't be 
+		// set until the GPU finishes processing all the commands prior to this Signal()
+		mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 	}
+	else
+	{
+		auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
-	mCommandList->SetPipelineState(mPSOs["sky"].Get());
-	mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Sky, mCurrFrameResource);
+		// command list 초기화 및 재사용
+		ThrowIfFailed(cmdListAlloc->Reset());
+
+		// pipeline 
+		ThrowIfFailed(mCommandList->Reset(cmdListAlloc.Get(), mPSOs["opaque"].Get()));
+
+		ID3D12DescriptorHeap *descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
+		//ID3D12DescriptorHeap* descriptorHeaps[] = { mSrvDescriptorHeap.Get() };
+		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+
+		//
+		// Shadow map pass.
+		//
+
+		// Bind material buffer as root descriptor
+		auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
+		mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
+
+		// Bind null SRV for shadow map pass.
+		mCommandList->SetGraphicsRootDescriptorTable(3, mNullSrv);
+
+		// Bind texture buffer as root signature
+		mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+		DrawSceneToShadowMap();
+
+		//
+		// Normal/depth pass.
+		//
+
+		DrawNormalsAndDepth();
+
+		//
+		// Compute SSAO.
+		// 
+
+		mCommandList->SetGraphicsRootSignature(mSsaoRootSignature.Get());
+		mSsao->ComputeSsao(mCommandList.Get(), mCurrFrameResource, 3);
+
+		//
+		// dynamic cube
+		//
+		/*
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
+
+		mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+		DrawSceneToCubeMap();
+		*/
 
 
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		//
+		// Main rendering pass.
+		//
 
-	// Close command list
-	ThrowIfFailed(mCommandList->Close());
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	// Add the command list to the queue for execution.
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		// Bind material buffer as root descriptor
+		//matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
+		//mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
 
-	ImguiUpdatePlatform();
-	// Swap the back and front buffers
-	ThrowIfFailed(mSwapChain->Present(1, 0));
-	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+		mCommandList->RSSetViewports(1, &mScreenViewport);
+		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-	// Advance the fence value to mark commands up to this fence point.
-	mCurrFrameResource->Fence = ++mCurrentFence;
+		// Indicate a state transition on the resource usage.
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-	// Add an instruction to the command queue to set a new fence point. 
-	// Because we are on the GPU timeline, the new fence point won't be 
-	// set until the GPU finishes processing all the commands prior to this Signal().
-	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
+		// Clear the back buffer and depth buffer.
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+		//mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		// Specify the buffers we are going to render to.
+		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+		// Bind all the textures used in this scene.  Observe
+		// that we only have to specify the first descriptor in the table.  
+		// The root signature knows how many descriptors are expected in the table.
+		mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+		auto passCB = mCurrFrameResource->PassCB->Resource();
+		mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
+
+		// Bind the sky cube map.  For our demos, we just use one "world" cube map representing the environment
+		// from far away, so all objects will use the same cube map and we only need to set it once per-frame.  
+		// If we wanted to use "local" cube maps, we would have to change them per-object, or dynamically
+		// index into an array of cube maps.
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE skyTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
+
+		//
+		// dynamic cube
+		// 
+		/*
+		// Use the dynamic cube map for the dynamic reflectors layer.
+		CD3DX12_GPU_DESCRIPTOR_HANDLE dynamicTexDescriptor(mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		dynamicTexDescriptor.Offset(mSkyTexHeapIndex + 2, mCbvSrvUavDescriptorSize);
+		mCommandList->SetGraphicsRootDescriptorTable(3, dynamicTexDescriptor);
+
+		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::OpaqueDynamicReflectors]);
+		*/
+
+		//
+		//stencil buffer
+		// 
+		/*
+		// Mark the visible mirror pixels in the stencil buffer with the value 1
+		mCommandList->OMSetStencilRef(1);
+		mCommandList->SetPipelineState(mPSOs["markStencilMirrors"].Get());
+		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Mirrors]);
+
+		// Draw the reflection into the mirror only (only for pixels where the stencil buffer is 1).
+		// Note that we must supply a different per-pass constant buffer--one with the lights reflected.
+		mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress() + 1 * passCBByteSize);
+		mCommandList->SetPipelineState(mPSOs["drawStencilReflections"].Get());
+		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Reflected]);
+
+		// Restore main pass constants and stencil ref.
+		mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
+		mCommandList->OMSetStencilRef(0);
+		*/
+
+		mCommandList->SetPipelineState(mPSOs["opaque"].Get());
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Opaque, mCurrFrameResource);
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::AlphaTested)))
+		{
+			mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTested, mCurrFrameResource);
+		}
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::Toon)))
+		{
+			mCommandList->SetPipelineState(mPSOs["toonout"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
+			mCommandList->SetPipelineState(mPSOs["Toon"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Toon, mCurrFrameResource);
+		}
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::AlphaTestedTreeSprites)))
+		{
+			mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::AlphaTestedTreeSprites, mCurrFrameResource);
+		}
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::Particle)))
+		{
+			mCommandList->SetPipelineState(mPSOs["particle"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Particle, mCurrFrameResource);
+		}
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::Transparent)))
+		{
+			mCommandList->SetPipelineState(mPSOs["transparent"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Transparent, mCurrFrameResource);
+		}
+
+		if (!(mRenderItems->isEmptyLayer((int)RenderLayer::Highlight)))
+		{
+			mCommandList->SetPipelineState(mPSOs["highlight"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Highlight, mCurrFrameResource);
+		}
+
+		//Imgui Debug window togle
+		if (imguidata.isShowDebug)
+		{
+			mCommandList->SetPipelineState(mPSOs["shadow_debug"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::ShadowDebug, mCurrFrameResource);
+
+			mCommandList->SetPipelineState(mPSOs["ssao_debug"].Get());
+			mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::SsaoDebug, mCurrFrameResource);
+		}
+
+		mCommandList->SetPipelineState(mPSOs["sky"].Get());
+		mRenderItems->DrawRenderItems(mCommandList.Get(), (int)RenderLayer::Sky, mCurrFrameResource);
+
+
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+		// Indicate a state transition on the resource usage.
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+		// Close command list
+		ThrowIfFailed(mCommandList->Close());
+
+		// Add the command list to the queue for execution.
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+		ImguiUpdatePlatform();
+		// Swap the back and front buffers
+		ThrowIfFailed(mSwapChain->Present(1, 0));
+		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+		// Advance the fence value to mark commands up to this fence point.
+		mCurrFrameResource->Fence = ++mCurrentFence;
+
+		// Add an instruction to the command queue to set a new fence point. 
+		// Because we are on the GPU timeline, the new fence point won't be 
+		// set until the GPU finishes processing all the commands prior to this Signal().
+		mCommandQueue->Signal(mFence.Get(), mCurrentFence);
+
+	}
 }
 
 
@@ -588,6 +781,7 @@ void Engine::UpdateMainPassCB(const GameTimer& gt)
 	XMStoreFloat4x4(&mMainPassCB.ViewProjTex, XMMatrixTranspose(viewProjTex));
 	XMStoreFloat4x4(&mMainPassCB.ShadowTransform, XMMatrixTranspose(shadowTransform));
 	mMainPassCB.EyePosW = mCamera.GetPosition3f();
+	mMainPassCB.CameraRight = mCamera.GetRight3f();
 	mMainPassCB.RenderTargetSize = XMFLOAT2((float)mClientWidth, (float)mClientHeight);
 	mMainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / mClientWidth, 1.0f / mClientHeight);
 	mMainPassCB.NearZ = 1.0f;
@@ -611,6 +805,19 @@ void Engine::UpdateMainPassCB(const GameTimer& gt)
 	
 	//UpdateCubeMapFacePassCBs();
 	
+}
+
+void Engine::UpdateParticlePassCB(const GameTimer& gt)
+{
+	mParticleCB.EmitCount = emitter->GetEmitCount();
+	mParticleCB.MaxParticles = emitter->GetMaxParticles();
+	mParticleCB.GridSize = emitter->GetGridSize();
+	mParticleCB.LifeTime = emitter->GetLifeTime();
+	mParticleCB.velocity = emitter->GetVelocity();
+	mParticleCB.acceleration = emitter->GetAcceleration();
+
+	auto currentParticleCB = mCurrFrameResource->ParticleCB.get();
+	currentParticleCB->CopyData(0, mParticleCB);
 }
 
 //void Engine::UpdateReflectedPassCB(const GameTimer& gt)
@@ -658,6 +865,7 @@ void Engine::UpdateCubeMapFacePassCBs()
 		XMStoreFloat4x4(&cubeFacePassCB.ViewProj, XMMatrixTranspose(viewProj));
 		XMStoreFloat4x4(&cubeFacePassCB.InvViewProj, XMMatrixTranspose(invViewProj));
 		cubeFacePassCB.EyePosW = mCubeMapCamera[i].GetPosition3f();
+		cubeFacePassCB.CameraRight = mCubeMapCamera[i].GetRight3f();
 		cubeFacePassCB.RenderTargetSize = XMFLOAT2((float)CubeMapSize, (float)CubeMapSize);
 		cubeFacePassCB.InvRenderTargetSize = XMFLOAT2(1.0f / CubeMapSize, 1.0f / CubeMapSize);
 
@@ -690,6 +898,7 @@ void Engine::UpdateShadowPassCB(const GameTimer& gt)
 	XMStoreFloat4x4(&mShadowPassCB.ViewProj, XMMatrixTranspose(viewProj));
 	XMStoreFloat4x4(&mShadowPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
 	mShadowPassCB.EyePosW = mLightPosW;
+	mShadowPassCB.CameraRight = mLightPosW;
 	mShadowPassCB.RenderTargetSize = XMFLOAT2((float)w, (float)h);
 	mShadowPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / w, 1.0f / h);
 	mShadowPassCB.NearZ = mLightNearZ;
@@ -733,6 +942,158 @@ void Engine::UpdateSsaoCB(const GameTimer& gt)
 
 	auto currSsaoCB = mCurrFrameResource->SsaoCB.get();
 	currSsaoCB->CopyData(0, ssaoCB);
+}
+
+
+void Engine::BuildComputeBuffers()
+{
+	// Particle Pool
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC uavHeapDesc = {};
+		uavHeapDesc.NumDescriptors = 6;
+		uavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		uavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&uavHeapDesc, IID_PPV_ARGS(&pUAVHeap)));
+
+		UINT64 particlePoolByteSize = sizeof(Particle) * emitter->GetMaxParticles();
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(particlePoolByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&RWParticlePool)));
+		RWParticlePool->SetName(L"ParticlePool");
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC particlePoolUAVDescription = {};
+
+		particlePoolUAVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		particlePoolUAVDescription.Buffer.FirstElement = 0;
+		particlePoolUAVDescription.Buffer.NumElements = emitter->GetMaxParticles();
+		particlePoolUAVDescription.Buffer.StructureByteStride = sizeof(Particle);
+		particlePoolUAVDescription.Buffer.CounterOffsetInBytes = 0;
+		particlePoolUAVDescription.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC particlePoolSRVDescription = {};
+		particlePoolSRVDescription.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		particlePoolSRVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		particlePoolSRVDescription.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		particlePoolSRVDescription.Buffer.FirstElement = 0;
+		particlePoolSRVDescription.Buffer.NumElements = emitter->GetMaxParticles();
+		particlePoolSRVDescription.Buffer.StructureByteStride = sizeof(Particle);
+
+		ParticlePoolCPUUAV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCbvSrvUavDescriptorSize);
+		ParticlePoolGPUUAV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateUnorderedAccessView(RWParticlePool.Get(), nullptr, &particlePoolUAVDescription, ParticlePoolCPUUAV);
+
+		ParticlePoolCPUSRV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 4, mCbvSrvUavDescriptorSize);
+		ParticlePoolGPUSRV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 4, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateShaderResourceView(RWParticlePool.Get(), &particlePoolSRVDescription, ParticlePoolCPUSRV);
+	}
+
+	// Dead List
+	{
+		UINT64 deadListByteSize = sizeof(unsigned int) * emitter->GetMaxParticles();
+		UINT64 countBufferOffset = AlignForUavCounter(deadListByteSize);
+
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(countBufferOffset + sizeof(UINT), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&ACDeadList)));
+		ACDeadList->SetName(L"ACDeadList");
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC deadListUAVDescription = {};
+		deadListUAVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		deadListUAVDescription.Buffer.FirstElement = 0;
+		deadListUAVDescription.Buffer.NumElements = emitter->GetMaxParticles();
+		deadListUAVDescription.Buffer.StructureByteStride = sizeof(unsigned	int);
+		deadListUAVDescription.Buffer.CounterOffsetInBytes = countBufferOffset;
+		deadListUAVDescription.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		ACDeadListCPUUAV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 1, mCbvSrvUavDescriptorSize);
+		ACDeadListGPUUAV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 1, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateUnorderedAccessView(ACDeadList.Get(), ACDeadList.Get(), &deadListUAVDescription, ACDeadListCPUUAV);
+	}
+
+	// Draw List
+	{
+		UINT64 drawListByteSize = sizeof(ParticleSort) * emitter->GetMaxParticles();
+		UINT64 countBufferOffset = AlignForUavCounter(drawListByteSize);
+
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(countBufferOffset + sizeof(UINT), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&RWDrawList)));
+		RWDrawList->SetName(L"DrawList");
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC drawlistUAVDescription = {};
+		drawlistUAVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		drawlistUAVDescription.Buffer.FirstElement = 0;
+		drawlistUAVDescription.Buffer.NumElements = emitter->GetMaxParticles();
+		drawlistUAVDescription.Buffer.StructureByteStride = sizeof(ParticleSort);
+		drawlistUAVDescription.Buffer.CounterOffsetInBytes = countBufferOffset;
+		drawlistUAVDescription.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		drawlistUAVDescription.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		DrawListCPUUAV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 2, mCbvSrvUavDescriptorSize);
+		DrawListGPUUAV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 2, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateUnorderedAccessView(RWDrawList.Get(), RWDrawList.Get(), &drawlistUAVDescription, DrawListCPUUAV);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC drawListSRVDescription = {};
+		drawListSRVDescription.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		drawListSRVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		drawListSRVDescription.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		drawListSRVDescription.Buffer.FirstElement = 0;
+		drawListSRVDescription.Buffer.NumElements = emitter->GetMaxParticles();
+		drawListSRVDescription.Buffer.StructureByteStride = sizeof(ParticleSort);
+
+		DrawListCPUSRV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 5, mCbvSrvUavDescriptorSize);
+		DrawListGPUSRV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 5, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateShaderResourceView(RWDrawList.Get(), &drawListSRVDescription, DrawListCPUSRV);
+
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(countBufferOffset + sizeof(UINT)),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&DrawListUploadBuffer)));
+	}
+
+	// Draw Args
+	{
+		UINT64 drawArgsByteSize = (sizeof(unsigned int) * 9);
+		UINT64 countBufferOffset = AlignForUavCounter(drawArgsByteSize);
+
+		ThrowIfFailed(md3dDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(countBufferOffset + sizeof(UINT), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&RWDrawArgs)));
+		RWDrawArgs.Get()->SetName(L"DrawArgs");
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC drawArgsUAVDescription = {};
+
+		drawArgsUAVDescription.Format = DXGI_FORMAT_UNKNOWN;
+		drawArgsUAVDescription.Buffer.FirstElement = 0;
+		drawArgsUAVDescription.Buffer.NumElements = 9;
+		drawArgsUAVDescription.Buffer.StructureByteStride = sizeof(unsigned int);
+		drawArgsUAVDescription.Buffer.CounterOffsetInBytes = countBufferOffset;
+		drawArgsUAVDescription.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		drawArgsUAVDescription.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		DrawArgsCPUUAV = CD3DX12_CPU_DESCRIPTOR_HANDLE(pUAVHeap->GetCPUDescriptorHandleForHeapStart(), 3, mCbvSrvUavDescriptorSize);
+		DrawArgsGPUUAV = CD3DX12_GPU_DESCRIPTOR_HANDLE(pUAVHeap->GetGPUDescriptorHandleForHeapStart(), 3, mCbvSrvUavDescriptorSize);
+		md3dDevice->CreateUnorderedAccessView(RWDrawArgs.Get(), RWDrawArgs.Get(), &drawArgsUAVDescription, DrawArgsCPUUAV);
+	}
 }
 
 void Engine::BuildRootSignature()
@@ -781,6 +1142,164 @@ void Engine::BuildRootSignature()
 		serializedRootSig->GetBufferPointer(),
 		serializedRootSig->GetBufferSize(),
 		IID_PPV_ARGS(mRootSignature.GetAddressOf())));
+}
+
+void Engine::BuildParticleRootSignature()
+{
+	// default root signature
+	{
+		CD3DX12_DESCRIPTOR_RANGE srvTable0;
+		srvTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+
+		CD3DX12_DESCRIPTOR_RANGE srvTable1;
+		srvTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+
+		// Root parameter can be a table, root descriptor or root constants.
+		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
+
+		// Create root CBVs.
+		slotRootParameter[0].InitAsConstantBufferView(0);
+		slotRootParameter[1].InitAsConstantBufferView(1);
+		slotRootParameter[2].InitAsConstantBufferView(2);
+		slotRootParameter[3].InitAsDescriptorTable(1, &srvTable0);
+		slotRootParameter[4].InitAsDescriptorTable(1, &srvTable1);
+
+		auto staticSamplers = GetStaticSamplers();
+
+		// A root signature is an array of root parameters.
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter,
+			(UINT)staticSamplers.size(),
+			staticSamplers.data(),
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+		ComPtr<ID3DBlob> serializedRootSig = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+			serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+		if (errorBlob != nullptr)
+		{
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+		ThrowIfFailed(hr);
+
+		ThrowIfFailed(md3dDevice->CreateRootSignature(
+			0,
+			serializedRootSig->GetBufferPointer(),
+			serializedRootSig->GetBufferSize(),
+			IID_PPV_ARGS(particleDrawSignature.GetAddressOf())));
+	}
+
+	// particle root signature
+	{
+		CD3DX12_DESCRIPTOR_RANGE uavTable0;
+		uavTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
+		CD3DX12_DESCRIPTOR_RANGE uavTable1;
+		uavTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1);
+
+		CD3DX12_DESCRIPTOR_RANGE uavTable2;
+		uavTable2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2);
+
+		CD3DX12_DESCRIPTOR_RANGE uavTable3;
+		uavTable3.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3);
+
+		// Root parameter can be a table, root descriptor or root constants.
+		CD3DX12_ROOT_PARAMETER slotRootParameter[7];
+
+		// Perfomance TIP: Order from most frequent to least frequent.
+		slotRootParameter[0].InitAsConstantBufferView(0);
+		slotRootParameter[1].InitAsConstantBufferView(1);
+		slotRootParameter[2].InitAsConstantBufferView(2);
+		slotRootParameter[3].InitAsDescriptorTable(1, &uavTable0);
+		slotRootParameter[4].InitAsDescriptorTable(1, &uavTable1);
+		slotRootParameter[5].InitAsDescriptorTable(1, &uavTable2);
+		slotRootParameter[6].InitAsDescriptorTable(1, &uavTable3);
+
+		// A root signature is an array of root parameters.
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(7, slotRootParameter,
+			0, nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_NONE);
+
+		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+		ComPtr<ID3DBlob> serializedRootSig = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+			serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+		if (errorBlob != nullptr)
+		{
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+		ThrowIfFailed(hr);
+
+		ThrowIfFailed(md3dDevice->CreateRootSignature(
+			0,
+			serializedRootSig->GetBufferPointer(),
+			serializedRootSig->GetBufferSize(),
+			IID_PPV_ARGS(particleRootSignature.GetAddressOf())));
+	}
+
+	// particle command signature
+	D3D12_INDIRECT_ARGUMENT_DESC Args[1];
+	Args[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+	D3D12_COMMAND_SIGNATURE_DESC particleCommandSingatureDescription = {};
+	particleCommandSingatureDescription.ByteStride = 36;
+	particleCommandSingatureDescription.NumArgumentDescs = 1;
+	particleCommandSingatureDescription.pArgumentDescs = Args;
+
+	ThrowIfFailed(md3dDevice->CreateCommandSignature(
+		&particleCommandSingatureDescription,
+		NULL,
+		IID_PPV_ARGS(particleCommandSignature.GetAddressOf())));
+
+}
+
+void Engine::BuildPostProcessRootSignature()
+{
+	CD3DX12_DESCRIPTOR_RANGE srvTable0;
+	srvTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+
+	CD3DX12_DESCRIPTOR_RANGE srvTable1;
+	srvTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+
+	CD3DX12_DESCRIPTOR_RANGE uavTable0;
+	uavTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
+	// Root parameter can be a table, root descriptor or root constants.
+	CD3DX12_ROOT_PARAMETER slotRootParameter[3];
+
+	// Perfomance TIP: Order from most frequent to least frequent.
+	slotRootParameter[0].InitAsDescriptorTable(1, &srvTable0);
+	slotRootParameter[1].InitAsDescriptorTable(1, &srvTable1);
+	slotRootParameter[2].InitAsDescriptorTable(1, &uavTable0);
+
+	auto staticSamplers = GetStaticSamplers();
+
+	// A root signature is an array of root parameters.
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter,
+		(UINT)staticSamplers.size(), staticSamplers.data(),
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+	ComPtr<ID3DBlob> serializedRootSig = nullptr;
+	ComPtr<ID3DBlob> errorBlob = nullptr;
+	HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+		serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+	if (errorBlob != nullptr)
+	{
+		::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+	}
+	ThrowIfFailed(hr);
+
+	ThrowIfFailed(md3dDevice->CreateRootSignature(
+		0,
+		serializedRootSig->GetBufferPointer(),
+		serializedRootSig->GetBufferSize(),
+		IID_PPV_ARGS(mPostProcessRootSignature.GetAddressOf())));
 }
 
 void Engine::BuildSsaoRootSignature()
@@ -867,7 +1386,7 @@ void Engine::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 36;
+	srvHeapDesc.NumDescriptors = 42;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -900,6 +1419,8 @@ void Engine::BuildDescriptorHeaps()
 		mTextures->GetResource("grass1N"),
 		mTextures->GetResource("octostone"),
 		mTextures->GetResource("octostoneN"),
+		mTextures->GetResource("star"),
+		mTextures->GetResource("circle"),
 	};
 	auto treeArrayTex = mTextures->GetResource("treeArrayTex");
 	auto skyTex = mTextures->GetResource("skyCubeMap");
@@ -959,6 +1480,9 @@ void Engine::BuildDescriptorHeaps()
 	mNullTexSrvIndex1 = mNullCubeSrvIndex + 1;
 	mNullTexSrvIndex2 = mNullTexSrvIndex1 + 1;
 
+	mFillterHeapIndex = mNullTexSrvIndex2 + 1;
+	mOffscreenHeapIndex = mFillterHeapIndex + mSobelFilter->DescriptorCount();
+
 	auto nullSrv = GetCpuSrv(mNullCubeSrvIndex);
 	mNullSrv = GetGpuSrv(mNullCubeSrvIndex);
 
@@ -989,6 +1513,25 @@ void Engine::BuildDescriptorHeaps()
 		mRtvDescriptorSize);
 
 
+	auto srvCpuStart = mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	auto srvGpuStart = mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	auto rtvCpuStart = mRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	int rtvOffset = SwapChainBufferCount;
+
+	//
+	// PostProcess
+	// 
+	//mSobelFilter->BuildDescriptors(
+	//	CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, mFillterHeapIndex, mCbvSrvDescriptorSize),
+	//	CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, mFillterHeapIndex, mCbvSrvDescriptorSize),
+	//	mCbvSrvDescriptorSize);
+
+	//mOffscreenRT->BuildDescriptors(
+	//	CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, mOffscreenHeapIndex, mCbvSrvDescriptorSize),
+	//	CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, mOffscreenHeapIndex, mCbvSrvDescriptorSize),
+	//	GetRtv(SwapChainBufferCount));
+	 
 	//
 	//	dynamic cube
 	//
@@ -1064,6 +1607,7 @@ void Engine::BuildPSOs()
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultLayout = mShaders->GetInputLayout();
 	std::vector<D3D12_INPUT_ELEMENT_DESC> OutlineLayout = mShaders->GetOutlineInputLayout();
 	std::vector<D3D12_INPUT_ELEMENT_DESC> treeLayout = mShaders->GetTreeSpriteInputLayout();
+	std::vector<D3D12_INPUT_ELEMENT_DESC> particleLayout = mShaders->GetParticleInputLayout();
 
 	ZeroMemory(&basePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	basePsoDesc.InputLayout = { defaultLayout.data(), (UINT)defaultLayout.size() };
@@ -1192,6 +1736,32 @@ void Engine::BuildPSOs()
 	treeSpritePsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&treeSpritePsoDesc, IID_PPV_ARGS(&mPSOs["treeSprites"])));
+
+
+	//
+	// PSO for particle sprites
+	//
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC particlePsoDesc = basePsoDesc;
+	particlePsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("particleVS")->GetBufferPointer()),
+		mShaders->GetShader("particleVS")->GetBufferSize()
+	};
+	particlePsoDesc.GS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("particleGS")->GetBufferPointer()),
+		mShaders->GetShader("particleGS")->GetBufferSize()
+	};
+	particlePsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders->GetShader("particlePS")->GetBufferPointer()),
+		mShaders->GetShader("particlePS")->GetBufferSize()
+	};
+	particlePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	particlePsoDesc.InputLayout = { particleLayout.data(), (UINT)particleLayout.size() };
+	particlePsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&particlePsoDesc, IID_PPV_ARGS(&mPSOs["particle"])));
 
 	//
 	// PSO for marking stencil mirrors.
@@ -1440,6 +2010,101 @@ void Engine::BuildPSOs()
 	};
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&ssaoBlurPsoDesc, IID_PPV_ARGS(&mPSOs["ssaoBlur"])));
 
+	if (isParticleCompute)
+	{
+		//
+		// PSO for Compute Particle
+		//
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePSODescription;
+		ZeroMemory(&opaquePSODescription, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		opaquePSODescription.pRootSignature = particleDrawSignature.Get();
+		opaquePSODescription.VS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("pVS")->GetBufferPointer()),
+			mShaders->GetShader("pVS")->GetBufferSize()
+		};
+		opaquePSODescription.PS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("pPS")->GetBufferPointer()),
+			mShaders->GetShader("pPS")->GetBufferSize()
+		};
+		opaquePSODescription.GS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("pGS")->GetBufferPointer()),
+			mShaders->GetShader("pGS")->GetBufferSize()
+		};
+
+		D3D12_RENDER_TARGET_BLEND_DESC transparencyBlendDesc2 = {};
+		transparencyBlendDesc2.BlendEnable = true;
+		transparencyBlendDesc2.BlendOp = D3D12_BLEND_OP_ADD;
+		transparencyBlendDesc2.SrcBlend = D3D12_BLEND_ONE;
+		transparencyBlendDesc2.DestBlend = D3D12_BLEND_ONE;
+		transparencyBlendDesc2.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		transparencyBlendDesc2.SrcBlendAlpha = D3D12_BLEND_ONE;
+		transparencyBlendDesc2.DestBlendAlpha = D3D12_BLEND_ONE;
+		transparencyBlendDesc2.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+		D3D12_DEPTH_STENCIL_DESC depth = {};
+		depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		depth.DepthEnable = true;
+
+		opaquePSODescription.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		opaquePSODescription.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		opaquePSODescription.BlendState.RenderTarget[0] = transparencyBlendDesc2;
+		opaquePSODescription.DepthStencilState = depth;
+		opaquePSODescription.SampleMask = UINT_MAX;
+		opaquePSODescription.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		opaquePSODescription.NumRenderTargets = 1;
+		opaquePSODescription.RTVFormats[0] = mBackBufferFormat;
+		opaquePSODescription.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+		opaquePSODescription.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+		opaquePSODescription.DSVFormat = mDepthStencilFormat;
+		ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePSODescription, IID_PPV_ARGS(&mPSOs["particleOpaque"])));
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC particleEmitPSO = {};
+		particleEmitPSO.pRootSignature = particleRootSignature.Get();
+		particleEmitPSO.CS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("EmitCS")->GetBufferPointer()),
+			mShaders->GetShader("EmitCS")->GetBufferSize()
+		};
+		particleEmitPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&particleEmitPSO, IID_PPV_ARGS(&mPSOs["particleEmit"])));
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC particleUpdatePSO = {};
+		particleUpdatePSO.pRootSignature = particleRootSignature.Get();
+		particleUpdatePSO.CS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("UpdateCS")->GetBufferPointer()),
+			mShaders->GetShader("UpdateCS")->GetBufferSize()
+		};
+		particleUpdatePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&particleUpdatePSO, IID_PPV_ARGS(&mPSOs["particleUpdate"])));
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC particleDrawPSO = {};
+		particleDrawPSO.pRootSignature = particleRootSignature.Get();
+		particleDrawPSO.CS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("CopyDrawCountCS")->GetBufferPointer()),
+			mShaders->GetShader("CopyDrawCountCS")->GetBufferSize()
+		};
+		particleDrawPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&particleDrawPSO, IID_PPV_ARGS(&mPSOs["particleDraw"])));
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC particleDeadListPSO = {};
+		particleDeadListPSO.pRootSignature = particleRootSignature.Get();
+		particleDeadListPSO.CS =
+		{
+			reinterpret_cast<BYTE*>(mShaders->GetShader("DeadListInitCS")->GetBufferPointer()),
+			mShaders->GetShader("DeadListInitCS")->GetBufferSize()
+		};
+		particleDeadListPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		ThrowIfFailed(md3dDevice->CreateComputePipelineState(&particleDeadListPSO, IID_PPV_ARGS(&mPSOs["particleDeadList"])));
+
+	}
+
 }
 
 void Engine::BuildFrameResources()
@@ -1447,13 +2112,17 @@ void Engine::BuildFrameResources()
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
 		mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-			8, 128, (UINT)mMaterials->GetMaterialSize()));
+			8, 128, (UINT)mMaterials->GetMaterialSize(), 1));
 	}
 }
 
 //
 //	dynamic cube
 //
+
+void Engine::DrawParticle()
+{
+}
 
 void Engine::DrawSceneToCubeMap()
 {
@@ -1563,6 +2232,16 @@ void Engine::DrawNormalsAndDepth()
 	// Change back to GENERIC_READ so we can read the texture in a shader.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+}
+
+void Engine::DrawFullscreenQuad(ID3D12GraphicsCommandList* cmdList)
+{
+	// Null-out IA stage since we build the vertex off the SV_VertexID in the shader.
+	cmdList->IASetVertexBuffers(0, 1, nullptr);
+	cmdList->IASetIndexBuffer(nullptr);
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	cmdList->DrawInstanced(6, 1, 0, 0);
 }
 
 

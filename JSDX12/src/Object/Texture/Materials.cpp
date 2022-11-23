@@ -122,7 +122,7 @@ void MaterialClass::BuildMaterials()
 	grass->MatCBIndex = 16;
 	grass->DiffuseSrvHeapIndex = 17;
 	grass->NormalSrvHeapIndex = 18;
-	grass->hasNormalMap = 0;
+	grass->hasNormalMap = 1;
 	grass->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	grass->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	grass->Roughness = 0.9f;
@@ -132,10 +132,20 @@ void MaterialClass::BuildMaterials()
 	octostone->MatCBIndex = 17;
 	octostone->DiffuseSrvHeapIndex = 19;
 	octostone->NormalSrvHeapIndex = 20;
-	octostone->hasNormalMap = 0;
+	octostone->hasNormalMap = 1;
 	octostone->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	octostone->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
 	octostone->Roughness = 0.98f;
+
+	auto star = std::make_unique<Material>();
+	star->Name = "star";
+	star->MatCBIndex = 17;
+	star->DiffuseSrvHeapIndex = 24;
+	star->NormalSrvHeapIndex = 2;
+	star->hasNormalMap = 0;
+	star->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	star->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	star->Roughness = 0.125f;
 
 	auto treeSprites = std::make_unique<Material>();
 	treeSprites->Name = "treeSprites";

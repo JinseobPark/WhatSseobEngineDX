@@ -44,6 +44,11 @@ void GeoMetryClass::BuildGeomatries()
 
 }
 
+void GeoMetryClass::BuildParticle(int count)
+{
+    BuildParticleGeometry(count);
+}
+
 MeshGeometry* GeoMetryClass::GetGeometry(std::string str)
 {
 	return geometryMap[str].get();
@@ -63,9 +68,24 @@ SubmeshGeometry GeoMetryClass::GetSubMesh(std::string str)
 	return geometryMap["shapeGeo"].get()->DrawArgs["box"];
 }
 
+//std::vector<ParticleVertex> GeoMetryClass::GetParicleVertex()
+//{
+//    return mParticleVertex;
+//}
+
+void GeoMetryClass::SetParticleVertex(std::vector<ParticleVertex> particles)
+{
+
+}
+
 std::vector<std::pair<std::string, std::string>> GeoMetryClass::GetSubMeshs()
 {
 	return mSubmeshGeoList;
+}
+
+void GeoMetryClass::PushSubMesh(std::pair<std::string, std::string> push)
+{
+    mSubmeshGeoList.push_back(push);
 }
 
 std::string GeoMetryClass::FindParentMesh(std::string str)
@@ -78,6 +98,11 @@ std::string GeoMetryClass::FindParentMesh(std::string str)
 std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> GeoMetryClass::GetGeos()
 {
 	return geometryMap;
+}
+
+void GeoMetryClass::PushGeos(std::string name, std::shared_ptr<MeshGeometry> mesh)
+{
+    geometryMap[name] = std::move(mesh);
 }
 
 // Frank Luna Function
@@ -368,6 +393,88 @@ void GeoMetryClass::BuildTreeSpritesGeometry()
 	mSubmeshGeoList.push_back(std::make_pair("points", "treeSpritesGeo"));
 
 	geometryMap["treeSpritesGeo"] = std::move(geo);
+}
+
+void GeoMetryClass::BuildParticleGeometry(int count)
+{
+
+    static const int particleCount = count;
+    std::vector<ParticleVertex> vertices(particleCount);
+
+    vertices.resize(particleCount);
+    for (UINT i = 0; i < particleCount; ++i)
+    {
+        float x = 0.0f + MathHelper::RandF(-20.0f, 20.0f);
+        float z = 0.0f + MathHelper::RandF(-20.0f, 20.0f);
+        float y = 0.0f + MathHelper::RandF(0.0f, 10.0f);
+        float size = MathHelper::RandF(0.01f, 0.1f);
+        vertices[i].Pos = XMFLOAT3(x, y, z);
+        vertices[i].Vel = XMFLOAT3(0, -0.1f, 0);
+        vertices[i].Acc = XMFLOAT3(0, -0.1f, 0);
+        vertices[i].Size = XMFLOAT2(size, size);
+    }
+
+    //std::array<ParticleVertex, particleCount> vertices;
+    //for (UINT i = 0; i < particleCount; ++i)
+    //{
+    //    float x = 0.0f + MathHelper::RandF(-4.0f, 4.0f);
+    //    float z = 0.0f + MathHelper::RandF(-4.0f, 4.0f);
+    //    float y = 0.0f;
+
+    //    // Move tree slightly above land height.
+    //    y += 1.0f;
+
+    //    vertices[i].Pos = XMFLOAT3(x, y, z);
+    //    vertices[i].Size = XMFLOAT2(2.0f, 2.0f);
+    //}
+
+
+    std::vector< std::uint16_t> indices(particleCount);
+    for (int i = 0; i < particleCount; i++)
+    {
+        indices[i] = i;
+    }
+    //std::array<std::uint16_t, 40> indices =
+    //{
+    //    0, 1, 2, 3, 4, 5, 6, 7,
+    //    8, 9, 10, 11, 12, 13, 14, 15,
+    //    16, 17, 18, 19, 20, 21, 22, 23,
+    //    24, 25, 26, 27, 28, 29, 30, 31,
+    //    32, 33, 34, 35, 36, 37, 38, 39
+    //};
+
+    const UINT vbByteSize = (UINT)vertices.size() * sizeof(ParticleVertex);
+    const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+    auto geo = std::make_unique<MeshGeometry>();
+    geo->Name = "particleGeo";
+
+    ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+    CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+    geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+        mCommandList, vertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+    geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice,
+        mCommandList, indices.data(), ibByteSize, geo->IndexBufferUploader);
+
+    geo->VertexByteStride = sizeof(ParticleVertex);
+    geo->VertexBufferByteSize = vbByteSize;
+    geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+    geo->IndexBufferByteSize = ibByteSize;
+
+    SubmeshGeometry submesh;
+    submesh.IndexCount = (UINT)indices.size();
+    submesh.StartIndexLocation = 0;
+    submesh.BaseVertexLocation = 0;
+
+    geo->DrawArgs["particle"] = submesh;
+    mSubmeshGeoList.push_back(std::make_pair("particle", "particleGeo"));
+
+    geometryMap["particleGeo"] = std::move(geo);
 }
 
 void GeoMetryClass::BuildModelGeometryOri(std::string filename, std::string modelname)

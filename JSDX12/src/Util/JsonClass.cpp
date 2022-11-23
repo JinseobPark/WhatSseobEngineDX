@@ -114,7 +114,7 @@ void JsonClass::LoadFromJson(std::vector<std::shared_ptr<RenderItem>>& items, st
 		anItem->ObjCBIndex = (*lastID)++;
 
 		anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		if(anItem->SubmeshName == "points") anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+		if(anItem->SubmeshName == "points" || anItem->SubmeshName == "particle") anItem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 		anItem->IndexCount = anItem->Geo->DrawArgs[anItem->SubmeshName].IndexCount;
 		anItem->StartIndexLocation = anItem->Geo->DrawArgs[anItem->SubmeshName].StartIndexLocation;
 		anItem->BaseVertexLocation = anItem->Geo->DrawArgs[anItem->SubmeshName].BaseVertexLocation;

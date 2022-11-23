@@ -848,5 +848,39 @@
 			0.0
 		],
 		"Visible" : true
+	},
+	"particle" : 
+	{
+		"Geo" : "particleGeo",
+		"ID" : 25,
+		"Layer" : 13,
+		"Mat" : "treeSprites",
+		"Name" : "particle",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "particle",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			5.0,
+			0.0,
+			5.0
+		],
+		"Visible" : true
 	}
 }

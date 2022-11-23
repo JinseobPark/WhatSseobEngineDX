@@ -2,7 +2,7 @@
 	"Car" : 
 	{
 		"Geo" : "carGeo",
-		"ID" : 24,
+		"ID" : 0,
 		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "Car",
@@ -36,7 +36,7 @@
 	"Car2" : 
 	{
 		"Geo" : "air_busGeo",
-		"ID" : 25,
+		"ID" : 1,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "Car2",
@@ -62,15 +62,15 @@
 		"Transform" : 
 		[
 			-6.2613663673400879,
-			1.2780848741531372,
-			-7.9063467979431152
+			-0.070182159543037415,
+			-7.9979796409606934
 		],
 		"Visible" : true
 	},
 	"Empty" : 
 	{
 		"Geo" : "dragon2Geo",
-		"ID" : 0,
+		"ID" : 2,
 		"Layer" : 0,
 		"Mat" : "bricks1",
 		"Name" : "Empty",
@@ -104,7 +104,7 @@
 	"air_bus" : 
 	{
 		"Geo" : "air_busGeo",
-		"ID" : 2,
+		"ID" : 3,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "air_bus",
@@ -138,7 +138,7 @@
 	"airplane" : 
 	{
 		"Geo" : "airplaneGeo",
-		"ID" : 3,
+		"ID" : 4,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "airplane",
@@ -172,7 +172,7 @@
 	"bridge" : 
 	{
 		"Geo" : "bridgeGeo",
-		"ID" : 4,
+		"ID" : 5,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "bridge",
@@ -206,7 +206,7 @@
 	"building" : 
 	{
 		"Geo" : "houseGeo",
-		"ID" : 5,
+		"ID" : 6,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "building",
@@ -240,7 +240,7 @@
 	"car1" : 
 	{
 		"Geo" : "boarding_ladderGeo",
-		"ID" : 6,
+		"ID" : 7,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "car1",
@@ -274,7 +274,7 @@
 	"chair" : 
 	{
 		"Geo" : "skullGeo",
-		"ID" : 7,
+		"ID" : 8,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "chair",
@@ -308,7 +308,7 @@
 	"empty" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 8,
+		"ID" : 9,
 		"Layer" : 0,
 		"Mat" : "mirror0",
 		"Name" : "empty",
@@ -342,7 +342,7 @@
 	"grid" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 9,
+		"ID" : 10,
 		"Layer" : 0,
 		"Mat" : "octostone",
 		"Name" : "grid",
@@ -376,7 +376,7 @@
 	"house" : 
 	{
 		"Geo" : "air_building1Geo",
-		"ID" : 10,
+		"ID" : 11,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "house",
@@ -410,7 +410,7 @@
 	"light1" : 
 	{
 		"Geo" : "lightGeo",
-		"ID" : 11,
+		"ID" : 12,
 		"Layer" : 0,
 		"Mat" : "Polygon",
 		"Name" : "light1",
@@ -444,7 +444,7 @@
 	"obj" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 12,
+		"ID" : 13,
 		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "obj",
@@ -478,7 +478,7 @@
 	"obj2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 13,
+		"ID" : 14,
 		"Layer" : 0,
 		"Mat" : "stone0",
 		"Name" : "obj2",
@@ -512,8 +512,8 @@
 	"pickitem" : 
 	{
 		"Geo" : "air_busGeo",
-		"ID" : 14,
-		"Layer" : 8,
+		"ID" : 15,
+		"Layer" : 9,
 		"Mat" : "highlight0",
 		"Name" : "pickitem",
 		"Rotate" : 
@@ -538,15 +538,15 @@
 		"Transform" : 
 		[
 			-6.2613663673400879,
-			1.2780848741531372,
-			-7.9063467979431152
+			-0.070182159543037415,
+			-7.9979796409606934
 		],
 		"Visible" : false
 	},
 	"plane" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 15,
+		"ID" : 16,
 		"Layer" : 0,
 		"Mat" : "grass",
 		"Name" : "plane",
@@ -580,7 +580,7 @@
 	"road" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 16,
+		"ID" : 17,
 		"Layer" : 0,
 		"Mat" : "tile0",
 		"Name" : "road",
@@ -614,8 +614,8 @@
 	"shadowDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 17,
-		"Layer" : 10,
+		"ID" : 18,
+		"Layer" : 11,
 		"Mat" : "bricks0",
 		"Name" : "shadowDebugWindow",
 		"Rotate" : 
@@ -648,8 +648,8 @@
 	"skybox" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 18,
-		"Layer" : 9,
+		"ID" : 19,
+		"Layer" : 10,
 		"Mat" : "sky",
 		"Name" : "skybox",
 		"Rotate" : 
@@ -682,7 +682,7 @@
 	"sphere1" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 19,
+		"ID" : 20,
 		"Layer" : 1,
 		"Mat" : "stone0",
 		"Name" : "sphere1",
@@ -716,7 +716,7 @@
 	"sphere2" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 20,
+		"ID" : 21,
 		"Layer" : 1,
 		"Mat" : "stone0",
 		"Name" : "sphere2",
@@ -750,7 +750,7 @@
 	"spot" : 
 	{
 		"Geo" : "spotGeo",
-		"ID" : 21,
+		"ID" : 22,
 		"Layer" : 0,
 		"Mat" : "icemirror",
 		"Name" : "spot",
@@ -784,8 +784,8 @@
 	"ssaoDebugWindow" : 
 	{
 		"Geo" : "shapeGeo",
-		"ID" : 22,
-		"Layer" : 11,
+		"ID" : 23,
+		"Layer" : 12,
 		"Mat" : "bricks0",
 		"Name" : "ssaoDebugWindow",
 		"Rotate" : 
@@ -818,8 +818,8 @@
 	"tree" : 
 	{
 		"Geo" : "treeSpritesGeo",
-		"ID" : 23,
-		"Layer" : 4,
+		"ID" : 24,
+		"Layer" : 5,
 		"Mat" : "treeSprites",
 		"Name" : "tree",
 		"Rotate" : 
@@ -846,6 +846,40 @@
 			5.0,
 			0.0,
 			0.0
+		],
+		"Visible" : true
+	},
+	"particle" : 
+	{
+		"Geo" : "particleGeo",
+		"ID" : 25,
+		"Layer" : 13,
+		"Mat" : "treeSprites",
+		"Name" : "particle",
+		"Rotate" : 
+		[
+			0.0,
+			0.0,
+			0.0
+		],
+		"Scale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"SubGeo" : "particle",
+		"TexScale" : 
+		[
+			1.0,
+			1.0,
+			1.0
+		],
+		"Transform" : 
+		[
+			5.0,
+			5.0,
+			5.0
 		],
 		"Visible" : true
 	}

@@ -41,5 +41,6 @@ enum class RenderLayer : int
 	Sky,
 	ShadowDebug,
 	SsaoDebug,
+	Particle,
 	Count
 };

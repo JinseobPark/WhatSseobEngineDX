@@ -33,6 +33,9 @@ public:
 
 	void DeleteRenderItem(ImguiData* data);
 
+	unsigned int GetItemLayerSize(int layer);
+	bool isEmptyLayer(int layer);
+
 	RenderItem* GetPickedItem();
 	RenderItem* GetPickedVewItem();
 

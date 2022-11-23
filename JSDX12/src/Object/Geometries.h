@@ -87,13 +87,19 @@ public:
 	GeoMetryClass& operator=(const GeoMetryClass& rhs) = delete;
 	~GeoMetryClass() = default;
 	void BuildGeomatries();
+	void BuildParticle(int count);
 
 	MeshGeometry* GetGeometry(std::string str);
 	SubmeshGeometry GetSubMesh(std::string str);
+	//std::vector<ParticleVertex> GetParicleVertex();
+	void SetParticleVertex(std::vector<ParticleVertex> particles);
 
 	std::vector<std::pair<std::string, std::string>> GetSubMeshs();
+	void PushSubMesh(std::pair<std::string, std::string> push);
 	std::string FindParentMesh(std::string str);
 	std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> GetGeos();
+	void GeoMetryClass::PushGeos(std::string name, std::shared_ptr<MeshGeometry> mesh);
+
 
 private:
 	ID3D12Device* md3dDevice = nullptr;
@@ -102,8 +108,12 @@ private:
 
 	std::vector<std::pair<std::string, std::string>> mSubmeshGeoList;
 
+	//std::vector<ParticleVertex> mParticleVertex;
+
+
 	void BuildShapeGeometry();
 	void BuildTreeSpritesGeometry();
+	void BuildParticleGeometry(int count);
 	void BuildModelGeometryOri(std::string filename, std::string modelname);
 	void BuildModelGeometry(std::string filename, std::string modelname);
 };
